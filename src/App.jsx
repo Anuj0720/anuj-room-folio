@@ -4,8 +4,8 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useControls, button, folder } from "leva";
 import { Room } from "./components/r3f/Room";
 import { Imac } from "./components/r3f/Imac";
-import BackButton from "./components/ui/BackButton";
 import { Poster } from "./components/r3f/Poster";
+import BackButton from "./components/ui/BackButton";
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -26,16 +26,16 @@ function CameraController() {
       "Copy Values": button(() => {
         const pos = camera.position;
         const tar = controls?.target;
-        return {
+        console.log("📷 Camera position:", {
           x: parseFloat(pos.x.toFixed(3)),
           y: parseFloat(pos.y.toFixed(3)),
           z: parseFloat(pos.z.toFixed(3)),
-          target: {
-            x: parseFloat(tar.x.toFixed(3)),
-            y: parseFloat(tar.y.toFixed(3)),
-            z: parseFloat(tar.z.toFixed(3)),
-          },
-        };
+        });
+        console.log("🎯 Controls target:", {
+          x: parseFloat(tar.x.toFixed(3)),
+          y: parseFloat(tar.y.toFixed(3)),
+          z: parseFloat(tar.z.toFixed(3)),
+        });
       }),
     }),
   );
@@ -105,7 +105,10 @@ export default function App() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const [backButtonTop, setBackButtonTop] = useState(48);
-  const resetCameraRef = useRef(null);
+
+  // ── Separate reset refs for each component ────────────────
+  const imacResetRef = useRef(null);
+  const posterResetRef = useRef(null);
 
   const handleZoomIn = (top = 48) => {
     setOrbitEnabled(false);
@@ -118,7 +121,8 @@ export default function App() {
 
   const handleResetClick = () => {
     setShowBackButton(false);
-    resetCameraRef.current?.();
+    imacResetRef.current?.();
+    posterResetRef.current?.();
   };
 
   const handleResetComplete = () => {
@@ -137,13 +141,13 @@ export default function App() {
             <Imac
               onZoomIn={() => handleZoomIn(48)}
               onZoomComplete={handleZoomComplete}
-              resetCameraRef={resetCameraRef}
+              resetCameraRef={imacResetRef}
               onResetComplete={handleResetComplete}
             />
             <Poster
               onZoomIn={() => handleZoomIn(28)}
               onZoomComplete={handleZoomComplete}
-              resetCameraRef={resetCameraRef}
+              resetCameraRef={posterResetRef}
               onResetComplete={handleResetComplete}
             />
           </Stage>

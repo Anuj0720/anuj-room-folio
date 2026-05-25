@@ -1,5 +1,5 @@
 import { useGLTF, useTexture } from "@react-three/drei";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { moveCamera } from "../../helper/cameraMover";
@@ -13,7 +13,8 @@ export function Poster({
 }) {
   const { scene } = useGLTF("/models/room.glb");
   const { camera, controls, gl } = useThree();
-  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const isAnimating = useRef(false);
+  const isZoomedIn = useRef(false);
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
   const posterMeshesRef = useRef([]);
@@ -26,79 +27,95 @@ export function Poster({
     "/textures/wall_poster/kaka.webp",
   ]);
 
+  // ── Save default camera on mount ─────────────────────────
+  useEffect(() => {
+    const id = setTimeout(() => {
+      defaultCamPos.current.copy(camera.position);
+      if (controls) defaultTarget.current.copy(controls.target);
+    }, 100);
+    return () => clearTimeout(id);
+  }, [camera, controls]);
+
+  // ── Apply textures ────────────────────────────────────────
   useEffect(() => {
     if (!scene) return;
 
-    [ronaldo, maldini, kroos, kaka].forEach((tex) => {
+    ;[ronaldo, maldini, kroos, kaka].forEach((tex) => {
       if (!tex) return;
       tex.flipY = false;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.needsUpdate = true;
     });
 
-    const basePosterMaterial = new THREE.MeshBasicMaterial({
-      toneMapped: false,
-      side: THREE.FrontSide,
-    });
-
     const posterMap = {
-      Poster1_photo: basePosterMaterial.clone(),
-      Poster2_photo: basePosterMaterial.clone(),
-      Poster3_photo: basePosterMaterial.clone(),
-      Poster4_photo: basePosterMaterial.clone(),
-    };
-
-    posterMap.Poster1_photo.map = ronaldo;
-    posterMap.Poster2_photo.map = maldini;
-    posterMap.Poster3_photo.map = kroos;
-    posterMap.Poster4_photo.map = kaka;
-
-    Object.values(posterMap).forEach((material) => {
-      material.needsUpdate = true;
-    });
+      Poster1_photo: ronaldo,
+      Poster2_photo: maldini,
+      Poster3_photo: kroos,
+      Poster4_photo: kaka,
+    }
 
     const posterMeshes = [];
+
     scene.traverse((child) => {
       if (!child.isMesh) return;
 
       const name = child.name;
+
       if (name.toLowerCase().includes("screen_glass")) {
         child.material = posterGlassMaterial;
         return;
       }
 
-      const material = posterMap[name];
-      if (!material) return;
+      const tex = posterMap[name];
+      if (!tex) return;
 
-      child.material = material;
+      child.material = new THREE.MeshBasicMaterial({
+        map: tex,
+        toneMapped: false,
+        side: THREE.FrontSide,
+        needsUpdate: true,
+      });
+
       posterMeshes.push(child);
+      console.log("✅ Poster applied to:", name);
     });
 
     posterMeshesRef.current = posterMeshes;
   }, [scene, ronaldo, maldini, kroos, kaka]);
 
+  // ── Reset camera ──────────────────────────────────────────
   const resetCamera = useCallback(() => {
-    setIsZoomedIn(false);
+    if (isAnimating.current) return;
+    isAnimating.current = true;
 
     moveCamera({
       camera,
       controls,
-      position: defaultCamPos.current,
-      target: defaultTarget.current,
-      onComplete: () => onResetComplete?.(),
+      position: {
+        x: defaultCamPos.current.x,
+        y: defaultCamPos.current.y,
+        z: defaultCamPos.current.z,
+      },
+      target: {
+        x: defaultTarget.current.x,
+        y: defaultTarget.current.y,
+        z: defaultTarget.current.z,
+      },
+      onComplete: () => {
+        isAnimating.current = false;
+        isZoomedIn.current = false;
+        onResetComplete?.();
+      },
     });
   }, [camera, controls, onResetComplete]);
 
-  useEffect(() => {
-    defaultCamPos.current.copy(camera.position);
-    if (controls) defaultTarget.current.copy(controls.target);
-  }, [camera, controls]);
-
+  // ── Register reset ref ────────────────────────────────────
   useEffect(() => {
     if (!resetCameraRef) return;
     resetCameraRef.current = resetCamera;
   }, [resetCameraRef, resetCamera]);
 
+  // ── Pointer move + click ──────────────────────────────────
   useEffect(() => {
     if (!gl || !camera || !controls) return;
 
@@ -115,6 +132,7 @@ export function Poster({
         posterMeshesRef.current,
         false,
       );
+
       if (intersects.length > 0) {
         gl.domElement.style.cursor = "pointer";
         hoveredPoster.current = intersects[0].object;
@@ -125,9 +143,12 @@ export function Poster({
     };
 
     const handleClick = () => {
-      if (!hoveredPoster.current || isZoomedIn) return;
+      if (!hoveredPoster.current) return;
+      if (isZoomedIn.current) return;
+      if (isAnimating.current) return;
 
-      setIsZoomedIn(true);
+      isZoomedIn.current = true;
+      isAnimating.current = true;
       onZoomIn?.();
 
       moveCamera({
@@ -135,7 +156,10 @@ export function Poster({
         controls,
         position: { x: -11, y: -29, z: -7 },
         target: { x: -11, y: -29, z: -9 },
-        onComplete: () => onZoomComplete?.(),
+        onComplete: () => {
+          isAnimating.current = false;
+          onZoomComplete?.();
+        },
       });
     };
 
@@ -147,7 +171,7 @@ export function Poster({
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("click", handleClick);
     };
-  }, [gl, camera, controls, isZoomedIn, onZoomIn, onZoomComplete]);
+  }, [gl, camera, controls, onZoomIn, onZoomComplete]);
 
   return null;
 }

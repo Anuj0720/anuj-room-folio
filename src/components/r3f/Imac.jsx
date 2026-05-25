@@ -15,20 +15,24 @@ export function Imac({
   const { scene } = useGLTF("/models/room.glb");
   const { camera, controls } = useThree();
   const [mesh, setMesh] = useState(null);
-  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
+  const isAnimating = useRef(false);
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
 
   // ── Save default camera on mount ─────────────────────────
   useEffect(() => {
-    defaultCamPos.current.copy(camera.position);
-    if (controls) defaultTarget.current.copy(controls.target);
+    // Wait a frame so OrbitControls target is ready
+    const id = setTimeout(() => {
+      defaultCamPos.current.copy(camera.position);
+      if (controls) defaultTarget.current.copy(controls.target);
+    }, 100);
+    return () => clearTimeout(id);
   }, [camera, controls]);
 
   // ── Find imac_screen mesh ─────────────────────────────────
   useEffect(() => {
     if (!scene) return;
-
     scene.traverse((child) => {
       if (!child.isMesh) return;
       if (child.name === "imac_screen") {
@@ -42,9 +46,10 @@ export function Imac({
   }, [scene]);
 
   // ── Zoom to iMac ──────────────────────────────────────────
-  const zoomToImac = () => {
-    if (isZoomedIn) return;
-    setIsZoomedIn(true);
+  const zoomToImac = useCallback(() => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setShowOverlay(false);
     onZoomIn?.();
 
     moveCamera({
@@ -52,22 +57,41 @@ export function Imac({
       controls,
       position: { x: -11, y: -28, z: -10 },
       target: { x: -26, y: -32, z: -9 },
-      onComplete: () => onZoomComplete?.(),
+      onComplete: () => {
+        isAnimating.current = false;
+        onZoomComplete?.();
+      },
     });
-  };
+  }, [camera, controls, onZoomIn, onZoomComplete]);
 
+  // ── Reset camera ──────────────────────────────────────────
   const resetCamera = useCallback(() => {
-    setIsZoomedIn(false);
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setShowOverlay(false);
 
     moveCamera({
       camera,
       controls,
-      position: defaultCamPos.current,
-      target: defaultTarget.current,
-      onComplete: () => onResetComplete?.(),
+      position: {
+        x: defaultCamPos.current.x,
+        y: defaultCamPos.current.y,
+        z: defaultCamPos.current.z,
+      },
+      target: {
+        x: defaultTarget.current.x,
+        y: defaultTarget.current.y,
+        z: defaultTarget.current.z,
+      },
+      onComplete: () => {
+        isAnimating.current = false;
+        setShowOverlay(true);
+        onResetComplete?.();
+      },
     });
   }, [camera, controls, onResetComplete]);
 
+  // ── Register reset ref ────────────────────────────────────
   useEffect(() => {
     if (!resetCameraRef) return;
     resetCameraRef.current = resetCamera;
@@ -85,7 +109,7 @@ export function Imac({
         rotation={[toRad(-90), toRad(0), toRad(90)]}
       >
         <div style={{ position: "relative", width: "100%", height: "100%" }}>
-          {!isZoomedIn && (
+          {showOverlay && (
             <div
               onClick={zoomToImac}
               style={{
@@ -98,7 +122,6 @@ export function Imac({
           )}
           <iframe
             src="https://macos-portfolio-red.vercel.app/"
-            onClick={zoomToImac}
             style={{
               width: "1400px",
               height: "666px",
