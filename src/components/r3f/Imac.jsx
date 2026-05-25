@@ -2,7 +2,7 @@ import { useGLTF, Html } from "@react-three/drei";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import gsap from "gsap";
+import { moveCamera } from "../../helper/cameraMover";
 
 const toRad = THREE.MathUtils.degToRad;
 
@@ -47,49 +47,25 @@ export function Imac({
     setIsZoomedIn(true);
     onZoomIn?.();
 
-    gsap.to(camera.position, {
-      x: -11,
-      y: -28,
-      z: -10,
-      duration: 2,
-      ease: "power2.inOut",
+    moveCamera({
+      camera,
+      controls,
+      position: { x: -11, y: -28, z: -10 },
+      target: { x: -26, y: -32, z: -9 },
       onComplete: () => onZoomComplete?.(),
     });
-
-    if (controls) {
-      gsap.to(controls.target, {
-        x: -26,
-        y: -32,
-        z: -9,
-        duration: 2,
-        ease: "power2.inOut",
-        onUpdate: () => controls.update(),
-      });
-    }
   };
 
   const resetCamera = useCallback(() => {
     setIsZoomedIn(false);
 
-    gsap.to(camera.position, {
-      x: 29.61,
-      y: -24.7,
-      z: -10.17,
-      duration: 2,
-      ease: "power2.inOut",
+    moveCamera({
+      camera,
+      controls,
+      position: defaultCamPos.current,
+      target: defaultTarget.current,
       onComplete: () => onResetComplete?.(),
     });
-
-    if (controls) {
-      gsap.to(controls.target, {
-        x: -2.11,
-        y: -30.5,
-        z: -10.12,
-        duration: 2,
-        ease: "power2.inOut",
-        onUpdate: () => controls.update(),
-      });
-    }
   }, [camera, controls, onResetComplete]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { useControls, button, folder } from "leva";
 import { Room } from "./components/r3f/Room";
 import { Imac } from "./components/r3f/Imac";
 import BackButton from "./components/ui/BackButton";
+import { Poster } from "./components/r3f/Poster";
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -25,22 +26,33 @@ function CameraController() {
       "Copy Values": button(() => {
         const pos = camera.position;
         const tar = controls?.target;
-        console.log("📷 Camera position:", {
+        return {
           x: parseFloat(pos.x.toFixed(3)),
           y: parseFloat(pos.y.toFixed(3)),
           z: parseFloat(pos.z.toFixed(3)),
-        });
-        console.log("🎯 Controls target:", {
-          x: parseFloat(tar.x.toFixed(3)),
-          y: parseFloat(tar.y.toFixed(3)),
-          z: parseFloat(tar.z.toFixed(3)),
-        });
+          target: {
+            x: parseFloat(tar.x.toFixed(3)),
+            y: parseFloat(tar.y.toFixed(3)),
+            z: parseFloat(tar.z.toFixed(3)),
+          },
+        };
       }),
     }),
   );
 
   useEffect(() => {
     if (!controls) return;
+
+    const equalsCurrent =
+      camera.position.x === camX &&
+      camera.position.y === camY &&
+      camera.position.z === camZ &&
+      controls.target.x === tarX &&
+      controls.target.y === tarY &&
+      controls.target.z === tarZ;
+
+    if (equalsCurrent) return;
+
     camera.position.set(camX, camY, camZ);
     controls.target.set(tarX, tarY, tarZ);
     controls.update();
@@ -49,15 +61,37 @@ function CameraController() {
   useEffect(() => {
     if (!controls) return;
 
+    const lastValues = {
+      camX: camera.position.x,
+      camY: camera.position.y,
+      camZ: camera.position.z,
+      tarX: controls.target.x,
+      tarY: controls.target.y,
+      tarZ: controls.target.z,
+    };
+
     const onUpdate = () => {
-      set({
+      const nextValues = {
         camX: parseFloat(camera.position.x.toFixed(3)),
         camY: parseFloat(camera.position.y.toFixed(3)),
         camZ: parseFloat(camera.position.z.toFixed(3)),
         tarX: parseFloat(controls.target.x.toFixed(3)),
         tarY: parseFloat(controls.target.y.toFixed(3)),
         tarZ: parseFloat(controls.target.z.toFixed(3)),
-      });
+      };
+
+      const changed =
+        nextValues.camX !== lastValues.camX ||
+        nextValues.camY !== lastValues.camY ||
+        nextValues.camZ !== lastValues.camZ ||
+        nextValues.tarX !== lastValues.tarX ||
+        nextValues.tarY !== lastValues.tarY ||
+        nextValues.tarZ !== lastValues.tarZ;
+
+      if (!changed) return;
+
+      Object.assign(lastValues, nextValues);
+      set(nextValues);
     };
 
     controls.addEventListener("change", onUpdate);
@@ -70,10 +104,12 @@ function CameraController() {
 export default function App() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
+  const [backButtonTop, setBackButtonTop] = useState(48);
   const resetCameraRef = useRef(null);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = (top = 48) => {
     setOrbitEnabled(false);
+    setBackButtonTop(top);
   };
 
   const handleZoomComplete = () => {
@@ -91,13 +127,21 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#1a1a1a" }}>
-      {showBackButton && <BackButton onClick={handleResetClick} />}
+      {showBackButton && (
+        <BackButton onClick={handleResetClick} top={backButtonTop} />
+      )}
       <Canvas camera={{ position: [29.61, -24.7, -10.17], fov: 35 }}>
         <Suspense fallback={null}>
           <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
             <Room />
             <Imac
-              onZoomIn={handleZoomIn}
+              onZoomIn={() => handleZoomIn(48)}
+              onZoomComplete={handleZoomComplete}
+              resetCameraRef={resetCameraRef}
+              onResetComplete={handleResetComplete}
+            />
+            <Poster
+              onZoomIn={() => handleZoomIn(28)}
               onZoomComplete={handleZoomComplete}
               resetCameraRef={resetCameraRef}
               onResetComplete={handleResetComplete}
