@@ -18,32 +18,42 @@ export function getPokemonVideoTexture() {
   pokemonVideoTexture = new THREE.VideoTexture(pokemonVideoElement);
   pokemonVideoTexture.minFilter = THREE.LinearFilter;
   pokemonVideoTexture.magFilter = THREE.LinearFilter;
-  pokemonVideoTexture.format = THREE.RGBFormat;
-  pokemonVideoTexture.encoding = THREE.sRGBEncoding;
+  pokemonVideoTexture.colorSpace = THREE.SRGBColorSpace;
   pokemonVideoTexture.flipY = false;
   pokemonVideoTexture.needsUpdate = true;
 
-  pokemonVideoElement
-    .play()
-    .catch(() => {
-      // Autoplay may be blocked until user interaction; the texture will start when allowed.
-    });
+  pokemonVideoElement.play().catch(() => {
+    // Autoplay may be blocked until user interaction; the texture will start when allowed.
+  });
 
   return pokemonVideoTexture;
 }
 
-export function playPokemonVideo() {
-  if (!pokemonVideoElement) return;
-  pokemonVideoElement.play().catch(() => {});
-}
+let spidermanVideoTexture;
+let spidermanVideoElement;
 
-export function pausePokemonVideo() {
-  pokemonVideoElement?.pause();
-}
+export function getSpidermanVideoTexture() {
+  if (spidermanVideoTexture) return spidermanVideoTexture;
+  if (typeof window === "undefined") return null;
 
-export function resetPokemonVideo() {
-  if (!pokemonVideoElement) return;
-  pokemonVideoElement.currentTime = 0;
-  pokemonVideoElement.play().catch(() => {});
+  spidermanVideoElement = document.createElement("video");
+  spidermanVideoElement.src = "/videos/spiderman.mp4";
+  spidermanVideoElement.muted = true;
+  spidermanVideoElement.loop = true;
+  spidermanVideoElement.playsInline = true;
+  spidermanVideoElement.crossOrigin = "anonymous";
+  spidermanVideoElement.preload = "auto";
+
+  spidermanVideoTexture = new THREE.VideoTexture(spidermanVideoElement);
+  spidermanVideoTexture.minFilter = THREE.LinearFilter;
+  spidermanVideoTexture.magFilter = THREE.LinearFilter;
+  spidermanVideoTexture.colorSpace = THREE.SRGBColorSpace;
+  spidermanVideoTexture.flipY = false;
+  spidermanVideoTexture.needsUpdate = true;
+
+  spidermanVideoElement.play().catch(() => {
+    // Autoplay may be blocked until user interaction; the texture will start when allowed.
+  });
+
+  return spidermanVideoTexture;
 }
-0

@@ -5,6 +5,7 @@ import { useControls, button, folder, Leva } from "leva";
 import { Room } from "./components/r3f/Room";
 import { Imac } from "./components/r3f/Imac";
 import { Poster } from "./components/r3f/Poster";
+import { Tv } from "./components/r3f/Tv";
 import BackButton from "./components/ui/BackButton";
 import { Hologram } from "./components/r3f/Hologram";
 
@@ -16,7 +17,7 @@ function CameraController() {
     () => ({
       Position: folder({
         camX: { value: 29.61, step: 0.001 },
-        camY: { value: -24.7, step: 0.001},
+        camY: { value: -24.7, step: 0.001 },
         camZ: { value: -10.17, step: 0.001 },
       }),
       Target: folder({
@@ -111,6 +112,7 @@ export default function App() {
   // ── Separate reset refs for each component ────────────────
   const imacResetRef = useRef(null);
   const posterResetRef = useRef(null);
+  const tvResetRef = useRef(null);
   const hologramResetRef = useRef(null);
 
   const handleZoomIn = (top = 48, left = "50%") => {
@@ -127,6 +129,7 @@ export default function App() {
     setShowBackButton(false);
     imacResetRef.current?.();
     posterResetRef.current?.();
+    tvResetRef.current?.();
     hologramResetRef.current?.();
   };
 
@@ -143,8 +146,8 @@ export default function App() {
           left={backButtonLeft}
         />
       )}
+      <Leva hidden />
       <Canvas camera={{ position: [29.61, -24.7, -10.17], fov: 35 }}>
-        {/* <Leva hidden /> */}
         <Suspense fallback={null}>
           <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
             <Room />
@@ -158,6 +161,12 @@ export default function App() {
               onZoomIn={() => handleZoomIn(28)}
               onZoomComplete={handleZoomComplete}
               resetCameraRef={posterResetRef}
+              onResetComplete={handleResetComplete}
+            />
+            <Tv
+              onZoomIn={() => handleZoomIn(0, "39%")}
+              onZoomComplete={handleZoomComplete}
+              resetCameraRef={tvResetRef}
               onResetComplete={handleResetComplete}
             />
             <Hologram
