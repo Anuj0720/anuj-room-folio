@@ -29,6 +29,13 @@ export function getPokemonVideoTexture() {
   return pokemonVideoTexture;
 }
 
+export function getPokemonVideoElement() {
+  if (!pokemonVideoElement) {
+    getPokemonVideoTexture();
+  }
+  return pokemonVideoElement;
+}
+
 let spidermanVideoTexture;
 let spidermanVideoElement;
 
@@ -56,4 +63,11 @@ export function getSpidermanVideoTexture() {
   });
 
   return spidermanVideoTexture;
+}
+
+export function getSpidermanVideoElement() {
+  if (!spidermanVideoElement) {
+    getSpidermanVideoTexture();
+  }
+  return spidermanVideoElement;
 }

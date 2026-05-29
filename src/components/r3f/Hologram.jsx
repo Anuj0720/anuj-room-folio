@@ -4,7 +4,10 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { moveCamera } from "../../helper/cameraMover";
 import { glassMaterial } from "../../helper/glass";
-import { getPokemonVideoTexture } from "../../helper/video";
+import {
+  getPokemonVideoTexture,
+  getPokemonVideoElement,
+} from "../../helper/video";
 
 export function Hologram({
   onZoomIn,
@@ -19,6 +22,7 @@ export function Hologram({
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
   const hologramGlassRef = useRef(null);
+  const hologramVideoElement = useRef(null);
   const hoveredMesh = useRef(null);
 
   useEffect(() => {
@@ -33,6 +37,8 @@ export function Hologram({
     if (!scene) return;
 
     const videoTexture = getPokemonVideoTexture();
+    const videoElement = getPokemonVideoElement();
+    hologramVideoElement.current = videoElement;
     if (!videoTexture) return;
 
     videoTexture.flipY = false;
@@ -80,6 +86,9 @@ export function Hologram({
       onComplete: () => {
         isAnimating.current = false;
         isZoomedIn.current = false;
+        if (hologramVideoElement.current) {
+          hologramVideoElement.current.muted = true;
+        }
         onResetComplete?.();
       },
     });
@@ -122,6 +131,9 @@ export function Hologram({
       isZoomedIn.current = true;
       isAnimating.current = true;
       onZoomIn?.();
+      if (hologramVideoElement.current) {
+        hologramVideoElement.current.play().catch(() => {});
+      }
 
       moveCamera({
         camera,
@@ -131,6 +143,10 @@ export function Hologram({
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();
+          if (hologramVideoElement.current) {
+            hologramVideoElement.current.muted = false;
+            hologramVideoElement.current.play().catch(() => {});
+          }
         },
       });
     };

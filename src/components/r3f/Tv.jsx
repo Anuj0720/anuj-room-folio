@@ -3,7 +3,10 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { moveCamera } from "../../helper/cameraMover";
-import { getSpidermanVideoTexture } from "../../helper/video";
+import {
+  getSpidermanVideoTexture,
+  getSpidermanVideoElement,
+} from "../../helper/video";
 
 export function Tv({
   onZoomIn,
@@ -18,6 +21,7 @@ export function Tv({
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
   const tvScreenRef = useRef(null);
+  const tvVideoElement = useRef(null);
   const hoveredMesh = useRef(null);
 
   useEffect(() => {
@@ -32,6 +36,8 @@ export function Tv({
     if (!scene) return;
 
     const videoTexture = getSpidermanVideoTexture();
+    const videoElement = getSpidermanVideoElement();
+    tvVideoElement.current = videoElement;
     if (!videoTexture) return;
 
     videoTexture.flipY = false;
@@ -70,6 +76,9 @@ export function Tv({
       onComplete: () => {
         isAnimating.current = false;
         isZoomedIn.current = false;
+        if (tvVideoElement.current) {
+          tvVideoElement.current.muted = true;
+        }
         onResetComplete?.();
       },
     });
@@ -112,6 +121,9 @@ export function Tv({
       isZoomedIn.current = true;
       isAnimating.current = true;
       onZoomIn?.();
+      if (tvVideoElement.current) {
+        tvVideoElement.current.play().catch(() => {});
+      }
 
       moveCamera({
         camera,
@@ -121,6 +133,10 @@ export function Tv({
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();
+          if (tvVideoElement.current) {
+            tvVideoElement.current.muted = false;
+            tvVideoElement.current.play().catch(() => {});
+          }
         },
       });
     };
