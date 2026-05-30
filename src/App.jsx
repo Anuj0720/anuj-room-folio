@@ -3,6 +3,7 @@ import { OrbitControls, Stage } from "@react-three/drei";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useControls, button, folder, Leva } from "leva";
 import { Room } from "./components/r3f/Room";
+import Animation from "./components/r3f/Animation";
 import { Imac } from "./components/r3f/Imac";
 import { Poster } from "./components/r3f/Poster";
 import { Tv } from "./components/r3f/Tv";
@@ -104,6 +105,9 @@ function CameraController() {
 }
 
 export default function App() {
+  useEffect(() => {
+    console.log("App mounted");
+  }, []);
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const [backButtonTop, setBackButtonTop] = useState(48);
@@ -151,6 +155,7 @@ export default function App() {
         <Suspense fallback={null}>
           <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
             <Room />
+            <Animation />
             <Imac
               onZoomIn={() => handleZoomIn(48)}
               onZoomComplete={handleZoomComplete}
