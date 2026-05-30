@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
-export default function Animation() {
+export default function Animation({ onImacScreenAnimComplete }) {
   const { scene } = useThree();
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function Animation() {
         "animate2_flower2",
         "animate2_flower3",
       ]);
-      const chariTop = byNameIncludes(["chari_top"]);
+      const chairTop = byNameIncludes(["chair_top"]);
 
       // animate3 numbered 1..10
       const animate3Names = Array.from(
@@ -63,7 +63,7 @@ export default function Animation() {
         a2_mac,
         a2_mac_screens,
         a2_flowers,
-        chariTop,
+        chairTop,
         a3,
       };
     };
@@ -100,7 +100,7 @@ export default function Animation() {
         a2_mac,
         a2_mac_screens,
         a2_flowers,
-        chariTop,
+        chairTop,
         a3,
       } = findTargets();
       const all = [
@@ -120,7 +120,7 @@ export default function Animation() {
       const macScreenMaterials = getScreenMaterials(a2_mac_screens);
       const master = gsap.timeline();
 
-      const rotateChariTop = (list) => {
+      const rotatechairTop = (list) => {
         if (!list || list.length === 0) return null;
         const rotations = list.map((m) => m.rotation);
         return gsap.to(rotations, {
@@ -154,10 +154,10 @@ export default function Animation() {
 
       // animate1 sequence: box1 -> box2 -> box3
       show(a1, { duration: 0.95, stagger: 0.12 });
-      const chariTopLoop = rotateChariTop(chariTop);
-      if (chariTopLoop) {
-        master.add(() => chariTopLoop.play());
-        timelines.push(chariTopLoop);
+      const chairTopLoop = rotatechairTop(chairTop);
+      if (chairTopLoop) {
+        master.add(() => chairTopLoop.play());
+        timelines.push(chairTopLoop);
       }
 
       // animate2: group1 (1..4) then imacs then imac_screen then mac then mac_screen then flowers
@@ -168,6 +168,9 @@ export default function Animation() {
           opacity: 1,
           duration: 0.8,
           ease: "power1.out",
+          onComplete: () => {
+            onImacScreenAnimComplete?.();
+          },
         });
       }
       show(a2_mac, { duration: 1.1, stagger: 0.14 });

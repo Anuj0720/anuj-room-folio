@@ -11,11 +11,13 @@ export function Imac({
   onZoomComplete,
   resetCameraRef,
   onResetComplete,
+  imacScreenAnimCompleteRef,
 }) {
   const { scene } = useGLTF("/models/room.glb");
   const { camera, controls } = useThree();
   const [mesh, setMesh] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [showIframe, setShowIframe] = useState(false);
   const isAnimating = useRef(false);
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
@@ -59,6 +61,7 @@ export function Imac({
       target: { x: -26, y: -32, z: -9 },
       onComplete: () => {
         isAnimating.current = false;
+        setShowIframe(true);
         onZoomComplete?.();
       },
     });
@@ -97,6 +100,24 @@ export function Imac({
     resetCameraRef.current = resetCamera;
   }, [resetCameraRef, resetCamera]);
 
+  // ── Listen for imac screen animation complete ─────────────
+  useEffect(() => {
+    const handleImacScreenAnimComplete = () => {
+      setShowIframe(true);
+    };
+
+    // Store the callback in the ref so Animation can call it
+    if (imacScreenAnimCompleteRef) {
+      imacScreenAnimCompleteRef.current = handleImacScreenAnimComplete;
+    }
+
+    return () => {
+      if (imacScreenAnimCompleteRef) {
+        imacScreenAnimCompleteRef.current = null;
+      }
+    };
+  }, [imacScreenAnimCompleteRef]);
+
   if (!mesh) return null;
 
   return (
@@ -120,18 +141,20 @@ export function Imac({
               }}
             />
           )}
-          <iframe
-            src="https://macos-portfolio-red.vercel.app/"
-            style={{
-              width: "1400px",
-              height: "666px",
-              border: "none",
-              display: "block",
-              borderRadius: "20px 20px 0px 0px",
-            }}
-            title="macOS Portfolio"
-            allow="autoplay; fullscreen"
-          />
+          {showIframe && (
+            <iframe
+              src="https://macos-portfolio-red.vercel.app/"
+              style={{
+                width: "1400px",
+                height: "666px",
+                border: "none",
+                display: "block",
+                borderRadius: "20px 20px 0px 0px",
+              }}
+              title="macOS Portfolio"
+              allow="autoplay; fullscreen"
+            />
+          )}
         </div>
       </Html>
     </primitive>

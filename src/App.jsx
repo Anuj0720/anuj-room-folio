@@ -118,6 +118,7 @@ export default function App() {
   const posterResetRef = useRef(null);
   const tvResetRef = useRef(null);
   const hologramResetRef = useRef(null);
+  const imacScreenAnimCompleteRef = useRef(null);
 
   const handleZoomIn = (top = 48, left = "50%") => {
     setOrbitEnabled(false);
@@ -155,12 +156,17 @@ export default function App() {
         <Suspense fallback={null}>
           <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
             <Room />
-            <Animation />
+            <Animation
+              onImacScreenAnimComplete={() =>
+                imacScreenAnimCompleteRef.current?.()
+              }
+            />
             <Imac
               onZoomIn={() => handleZoomIn(48)}
               onZoomComplete={handleZoomComplete}
               resetCameraRef={imacResetRef}
               onResetComplete={handleResetComplete}
+              imacScreenAnimCompleteRef={imacScreenAnimCompleteRef}
             />
             <Poster
               onZoomIn={() => handleZoomIn(28)}
