@@ -1,14 +1,17 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Stage } from "@react-three/drei";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useControls, button, folder, Leva } from "leva";
 import { Room } from "./components/r3f/Room";
 import Animation from "./components/r3f/Animation";
 import { Imac } from "./components/r3f/Imac";
+import {Mac} from "./components/r3f/Mac";
 import { Poster } from "./components/r3f/Poster";
 import { Tv } from "./components/r3f/Tv";
 import BackButton from "./components/ui/BackButton";
 import { Hologram } from "./components/r3f/Hologram";
+
+import Loading from "./components/ui/Loading"; // adjust path to where you saved Loading.jsx
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -17,14 +20,14 @@ function CameraController() {
     "Camera",
     () => ({
       Position: folder({
-        camX: { value: 29.61, step: 0.001 },
-        camY: { value: -24.7, step: 0.001 },
-        camZ: { value: -10.17, step: 0.001 },
+        camX: { value: 25.1, step: 0.1 },
+        camY: { value: -21.5, step: 0.1 },
+        camZ: { value: 6.37, step: 0.11 },
       }),
       Target: folder({
-        tarX: { value: -2.11, step: 0.001 },
-        tarY: { value: -30.5, step: 0.001 },
-        tarZ: { value: -10.12, step: 0.001 },
+        tarX: { value: -4.5, step: 0.1 },
+        tarY: { value: -30.1, step: 0.1 },
+        tarZ: { value: -10.12, step: 0.1 },
       }),
       "Copy Values": button(() => {
         const pos = camera.position;
@@ -108,6 +111,7 @@ export default function App() {
   useEffect(() => {
     console.log("App mounted");
   }, []);
+  const [loaded, setLoaded] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const [backButtonTop, setBackButtonTop] = useState(48);
@@ -115,86 +119,123 @@ export default function App() {
 
   // ── Separate reset refs for each component ────────────────
   const imacResetRef = useRef(null);
+  const macResetRef = useRef(null);
   const posterResetRef = useRef(null);
   const tvResetRef = useRef(null);
   const hologramResetRef = useRef(null);
   const imacScreenAnimCompleteRef = useRef(null);
+  const macScreenAnimCompleteRef = useRef(null);
+  const tvScreenAnimCompleteRef = useRef(null);
 
-  const handleZoomIn = (top = 48, left = "50%") => {
+  const handleZoomIn = useCallback((top = 48, left = "50%") => {
     setOrbitEnabled(false);
     setBackButtonTop(top);
     setBackButtonLeft(left);
-  };
+  }, []);
 
-  const handleZoomComplete = () => {
+  const handleZoomComplete = useCallback(() => {
     setShowBackButton(true);
-  };
+  }, []);
 
-  const handleResetClick = () => {
+  const handleResetClick = useCallback(() => {
     setShowBackButton(false);
     imacResetRef.current?.();
+    macResetRef.current?.();
     posterResetRef.current?.();
     tvResetRef.current?.();
     hologramResetRef.current?.();
-  };
+  }, []);
 
-  const handleResetComplete = () => {
+  const handleResetComplete = useCallback(() => {
     setOrbitEnabled(true);
-  };
+  }, []);
+
+  const handleImacScreenAnimComplete = useCallback(() => {
+    imacScreenAnimCompleteRef.current?.();
+  }, []);
+
+  const handleMacScreenAnimComplete = useCallback(() => {
+  macScreenAnimCompleteRef.current?.();
+}, []);
+
+  const handleTvScreenAnimComplete = useCallback(() => {
+    tvScreenAnimCompleteRef.current?.();
+  }, []);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#1a1a1a" }}>
-      {showBackButton && (
-        <BackButton
-          onClick={handleResetClick}
-          top={backButtonTop}
-          left={backButtonLeft}
-        />
-      )}
-      <Leva hidden />
-      <Canvas camera={{ position: [29.61, -24.7, -10.17], fov: 35 }}>
-        <Suspense fallback={null}>
-          <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
-            <Room />
-            <Animation
-              onImacScreenAnimComplete={() =>
-                imacScreenAnimCompleteRef.current?.()
-              }
-            />
-            <Imac
-              onZoomIn={() => handleZoomIn(48)}
-              onZoomComplete={handleZoomComplete}
-              resetCameraRef={imacResetRef}
-              onResetComplete={handleResetComplete}
-              imacScreenAnimCompleteRef={imacScreenAnimCompleteRef}
-            />
-            <Poster
-              onZoomIn={() => handleZoomIn(28)}
-              onZoomComplete={handleZoomComplete}
-              resetCameraRef={posterResetRef}
-              onResetComplete={handleResetComplete}
-            />
-            <Tv
-              onZoomIn={() => handleZoomIn(0, "39%")}
-              onZoomComplete={handleZoomComplete}
-              resetCameraRef={tvResetRef}
-              onResetComplete={handleResetComplete}
-            />
-            <Hologram
-              onZoomIn={() => handleZoomIn(58, "44%")}
-              onZoomComplete={handleZoomComplete}
-              resetCameraRef={hologramResetRef}
-              onResetComplete={handleResetComplete}
-            />
-          </Stage>
-          <OrbitControls
-            makeDefault
-            enabled={orbitEnabled}
-            target={[-2.11, -30.5, -10.12]}
+    <>
+      {!loaded && <Loading onComplete={() => setLoaded(true)} />}
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          background: "#1a1a1a",
+          visibility: loaded ? "visible" : "hidden", // hides but still loads
+        }}
+      >
+        {showBackButton && (
+          <BackButton
+            onClick={handleResetClick}
+            top={backButtonTop}
+            left={backButtonLeft}
           />
-          <CameraController />
-        </Suspense>
-      </Canvas>
-    </div>
+        )}
+        <Leva hidden />
+        {/* <Canvas camera={{ position: [29.61, -24.7, -10.17], fov: 35 }}> */}
+        <Canvas camera={{ position: [25.1, -21.5, 6.37], fov: 35 }}>
+          <Suspense fallback={null}>
+            <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
+              <Room />
+              <Animation
+                loaded={loaded}
+                onImacScreenAnimComplete={handleImacScreenAnimComplete}
+                onTvScreenAnimComplete={handleTvScreenAnimComplete}
+                onMacScreenAnimComplete={handleMacScreenAnimComplete}
+              />
+              <Imac
+                onZoomIn={() => handleZoomIn(48)}
+                onZoomComplete={handleZoomComplete}
+                resetCameraRef={imacResetRef}
+                onResetComplete={handleResetComplete}
+                imacScreenAnimCompleteRef={imacScreenAnimCompleteRef}
+              />
+              <Mac
+                onZoomIn={() => handleZoomIn(16)}
+                onZoomComplete={handleZoomComplete}
+                resetCameraRef={macResetRef}
+                onResetComplete={handleResetComplete}
+                macScreenAnimCompleteRef={macScreenAnimCompleteRef}
+              />
+              <Poster
+                onZoomIn={() => handleZoomIn(28)}
+                onZoomComplete={handleZoomComplete}
+                resetCameraRef={posterResetRef}
+                onResetComplete={handleResetComplete}
+              />
+              <Tv
+                onZoomIn={() => handleZoomIn(0, "39%")}
+                onZoomComplete={handleZoomComplete}
+                resetCameraRef={tvResetRef}
+                onResetComplete={handleResetComplete}
+                tvScreenAnimCompleteRef={tvScreenAnimCompleteRef}
+              />
+              <Hologram
+                onZoomIn={() => handleZoomIn(58, "44%")}
+                onZoomComplete={handleZoomComplete}
+                resetCameraRef={hologramResetRef}
+                onResetComplete={handleResetComplete}
+              />
+            </Stage>
+            <OrbitControls
+              makeDefault
+              enabled={orbitEnabled}
+              // target={[-2.11, -30.5, -10.12]}
+              target={[-4.5, -30.1, -7.7]}
+            />
+            <CameraController />
+          </Suspense>
+        </Canvas>
+      </div>
+    </>
   );
 }

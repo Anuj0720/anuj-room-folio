@@ -71,3 +71,39 @@ export function getSpidermanVideoElement() {
   }
   return spidermanVideoElement;
 }
+
+let onepieceVideoTexture;
+let onepieceVideoElement;
+
+export function getOnepieceVideoTexture() {
+  if (onepieceVideoTexture) return onepieceVideoTexture;
+  if (typeof window === "undefined") return null;
+
+  onepieceVideoElement = document.createElement("video");
+  onepieceVideoElement.src = "/videos/onepiece.mp4";
+  onepieceVideoElement.muted = true;
+  onepieceVideoElement.loop = true;
+  onepieceVideoElement.playsInline = true;
+  onepieceVideoElement.crossOrigin = "anonymous";
+  onepieceVideoElement.preload = "auto";
+
+  onepieceVideoTexture = new THREE.VideoTexture(onepieceVideoElement);
+  onepieceVideoTexture.minFilter = THREE.LinearFilter;
+  onepieceVideoTexture.magFilter = THREE.LinearFilter;
+  onepieceVideoTexture.colorSpace = THREE.SRGBColorSpace;
+  onepieceVideoTexture.flipY = false;
+  onepieceVideoTexture.needsUpdate = true;
+
+  onepieceVideoElement.play().catch(() => {
+    // Autoplay may be blocked until user interaction; the texture will start when allowed.
+  });
+
+  return onepieceVideoTexture;
+}
+
+export function getOnepieceVideoElement() {
+  if (!onepieceVideoElement) {
+    getOnepieceVideoTexture();
+  }
+  return onepieceVideoElement;
+}

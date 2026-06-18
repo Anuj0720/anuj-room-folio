@@ -48,10 +48,10 @@ export function Poster({
     });
 
     const posterMap = {
-      Poster1_photo: ronaldo,
-      Poster2_photo: maldini,
-      Poster3_photo: kroos,
-      Poster4_photo: kaka,
+      poster1_photo: ronaldo,
+      poster2_photo: maldini,
+      poster3_photo: kroos,
+      poster4_photo: kaka,
     }
 
     const posterMeshes = [];

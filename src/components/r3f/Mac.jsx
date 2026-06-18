@@ -4,16 +4,16 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { moveCamera } from "../../helper/cameraMover";
 import {
-  getSpidermanVideoTexture,
-  getSpidermanVideoElement,
+  getOnepieceVideoTexture,
+  getOnepieceVideoElement,
 } from "../../helper/video";
 
-export function Tv({
+export function Mac({
   onZoomIn,
   onZoomComplete,
   resetCameraRef,
   onResetComplete,
-  tvScreenAnimCompleteRef,
+  macScreenAnimCompleteRef,
 }) {
   useGLTF("/models/room.glb");
   const { camera, controls, gl, scene } = useThree();
@@ -21,10 +21,10 @@ export function Tv({
   const isZoomedIn = useRef(false);
   const defaultCamPos = useRef(new THREE.Vector3());
   const defaultTarget = useRef(new THREE.Vector3());
-  const tvScreenRef = useRef(null);
-  const tvVideoMaterialRef = useRef(null);
-  const tvVideoTextureRef = useRef(null);
-  const tvVideoElement = useRef(null);
+  const macScreenRef = useRef(null);
+  const macVideoMaterialRef = useRef(null);
+  const macVideoTextureRef = useRef(null);
+  const macVideoElement = useRef(null);
   const hoveredMesh = useRef(null);
 
   useEffect(() => {
@@ -38,31 +38,60 @@ export function Tv({
   useEffect(() => {
     if (!scene) return;
 
-    const videoTexture = getSpidermanVideoTexture();
-    const videoElement = getSpidermanVideoElement();
-    tvVideoElement.current = videoElement;
-    if (!videoTexture) return;
+    let mounted = true;
 
-    videoTexture.flipY = false;
-    videoTexture.needsUpdate = true;
+    const applyTexture = () => {
+      // Find mac_screen mesh — exact name match to avoid touching imac_screen
+      let found = null;
+      scene.traverse((child) => {
+        if (!child.isMesh) return;
+        const name = (child.name || "").toLowerCase();
+        if (name.includes("mac_screen") && !name.includes("imac_screen")) {
+          found = child;
+        }
+      });
 
-    scene.traverse((child) => {
-      if (!child.isMesh) return;
-      const name = (child.name || "").toLowerCase();
-      if (name.includes("tv_screen")) {
-        const material = new THREE.MeshBasicMaterial({
-          map: videoTexture,
-          transparent: true,
-          opacity: 0,
-          toneMapped: false,
-        });
-        child.material = material;
-        child.material.needsUpdate = true;
-        tvScreenRef.current = child;
-        tvVideoMaterialRef.current = material;
-        tvVideoTextureRef.current = videoTexture;
-      }
-    });
+      if (!found) return false;
+
+      const videoTexture = getOnepieceVideoTexture();
+      const videoElement = getOnepieceVideoElement();
+      if (!mounted) return true;
+
+      macVideoElement.current = videoElement;
+      if (!videoTexture) return true;
+
+      videoTexture.flipY = false;
+      videoTexture.needsUpdate = true;
+
+      const material = new THREE.MeshBasicMaterial({
+        map: videoTexture,
+        transparent: true,
+        opacity: 0,
+        toneMapped: false,
+      });
+
+      found.material = material;
+      found.material.needsUpdate = true;
+      macScreenRef.current = found;
+      macVideoMaterialRef.current = material;
+      macVideoTextureRef.current = videoTexture;
+
+      return true;
+    };
+
+    // Try immediately, else poll (model may not be in scene yet)
+    if (!applyTexture()) {
+      const interval = setInterval(() => {
+        if (!mounted) return;
+        if (applyTexture()) clearInterval(interval);
+      }, 100);
+      return () => {
+        mounted = false;
+        clearInterval(interval);
+      };
+    }
+
+    return () => { mounted = false; };
   }, [scene]);
 
   const resetCamera = useCallback(() => {
@@ -85,8 +114,8 @@ export function Tv({
       onComplete: () => {
         isAnimating.current = false;
         isZoomedIn.current = false;
-        if (tvVideoElement.current) {
-          tvVideoElement.current.muted = true;
+        if (macVideoElement.current) {
+          macVideoElement.current.muted = true;
         }
         onResetComplete?.();
       },
@@ -99,25 +128,25 @@ export function Tv({
   }, [resetCameraRef, resetCamera]);
 
   useEffect(() => {
-    const handleTvScreenAnimComplete = () => {
-      const material = tvVideoMaterialRef.current;
-      const videoTexture = tvVideoTextureRef.current;
+    const handleMacScreenAnimComplete = () => {
+      const material = macVideoMaterialRef.current;
+      const videoTexture = macVideoTextureRef.current;
       if (!material || !videoTexture) return;
       material.map = videoTexture;
       material.opacity = 1;
       material.needsUpdate = true;
     };
 
-    if (tvScreenAnimCompleteRef) {
-      tvScreenAnimCompleteRef.current = handleTvScreenAnimComplete;
+    if (macScreenAnimCompleteRef) {
+      macScreenAnimCompleteRef.current = handleMacScreenAnimComplete;
     }
 
     return () => {
-      if (tvScreenAnimCompleteRef) {
-        tvScreenAnimCompleteRef.current = null;
+      if (macScreenAnimCompleteRef) {
+        macScreenAnimCompleteRef.current = null;
       }
     };
-  }, [tvScreenAnimCompleteRef]);
+  }, [macScreenAnimCompleteRef]);
 
   useEffect(() => {
     if (!gl || !camera || !controls) return;
@@ -130,8 +159,8 @@ export function Tv({
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
-      const intersects = tvScreenRef.current
-        ? raycaster.intersectObject(tvScreenRef.current, false)
+      const intersects = macScreenRef.current
+        ? raycaster.intersectObject(macScreenRef.current, false)
         : [];
 
       if (intersects.length > 0) {
@@ -151,21 +180,21 @@ export function Tv({
       isZoomedIn.current = true;
       isAnimating.current = true;
       onZoomIn?.();
-      if (tvVideoElement.current) {
-        tvVideoElement.current.play().catch(() => {});
+      if (macVideoElement.current) {
+        macVideoElement.current.play().catch(() => {});
       }
 
       moveCamera({
         camera,
         controls,
-        position: { x: -9.96, y: -32.36, z: -6.75 },
-        target: { x: -9.96, y: -32.39, z: -7.96 },
+        position: { x: -12, y: -30, z: -10.55 },
+        target: { x: -30.3, y: -34.2, z: -19.9 },
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();
-          if (tvVideoElement.current) {
-            tvVideoElement.current.muted = false;
-            tvVideoElement.current.play().catch(() => {});
+          if (macVideoElement.current) {
+            macVideoElement.current.muted = false;
+            macVideoElement.current.play().catch(() => {});
           }
         },
       });

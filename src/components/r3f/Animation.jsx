@@ -2,10 +2,60 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
-export default function Animation({ onImacScreenAnimComplete }) {
+export default function Animation({
+  loaded,
+  onImacScreenAnimComplete,
+  onTvScreenAnimComplete,
+}) {
   const { scene } = useThree();
 
+  // Immediately hide all screens as soon as meshes are in the scene,
+  // regardless of loaded state — so they never flash visible during background load
   useEffect(() => {
+    let mounted = true;
+
+    const hideScreens = () => {
+      const screens = [];
+      scene.traverse((child) => {
+        if (!child.isMesh) return;
+        const name = (child.name || "").toLowerCase();
+        if (
+          name.includes("imac_screen") ||
+          name.includes("tv_screen") ||
+          name.includes("mac_screen")
+        ) {
+          screens.push(child);
+        }
+      });
+      if (screens.length === 0) return false;
+      screens.forEach((mesh) => {
+        const apply = (mat) => {
+          mat.transparent = true;
+          mat.opacity = 0;
+        };
+        if (Array.isArray(mesh.material)) mesh.material.forEach(apply);
+        else if (mesh.material) apply(mesh.material);
+      });
+      return true;
+    };
+
+    if (!hideScreens()) {
+      const interval = setInterval(() => {
+        if (!mounted) return;
+        if (hideScreens()) clearInterval(interval);
+      }, 50);
+      return () => {
+        mounted = false;
+        clearInterval(interval);
+      };
+    }
+
+    return () => { mounted = false; };
+  }, [scene]);
+
+  useEffect(() => {
+    if (!loaded) return;
+
     let mounted = true;
     const timelines = [];
 
@@ -38,6 +88,8 @@ export default function Animation({ onImacScreenAnimComplete }) {
       ]);
       const a2_imac = byNameIncludes(["animate2_imac1", "animate2_imac2"]);
       const a2_imac_screens = byNameIncludes(["imac_screen"]);
+      const a2_tv = byNameIncludes(["animate2_tv1", "animate2_tv2"]);
+      const a2_tv_screens = byNameIncludes(["tv_screen"]);
       const a2_mac = byNameIncludes(["animate2_mac1", "animate2_mac2"]);
       const a2_mac_screens = byNameIncludes(["mac_screen"]);
       const a2_flowers = byNameIncludes([
@@ -60,6 +112,8 @@ export default function Animation({ onImacScreenAnimComplete }) {
         a2_group1,
         a2_imac,
         a2_imac_screens,
+        a2_tv,
+        a2_tv_screens,
         a2_mac,
         a2_mac_screens,
         a2_flowers,
@@ -97,6 +151,8 @@ export default function Animation({ onImacScreenAnimComplete }) {
         a2_group1,
         a2_imac,
         a2_imac_screens,
+        a2_tv,
+        a2_tv_screens,
         a2_mac,
         a2_mac_screens,
         a2_flowers,
@@ -107,6 +163,7 @@ export default function Animation({ onImacScreenAnimComplete }) {
         ...a1,
         ...a2_group1,
         ...a2_imac,
+        ...a2_tv,
         ...a2_mac,
         ...a2_flowers,
         ...a3,
@@ -117,6 +174,7 @@ export default function Animation({ onImacScreenAnimComplete }) {
       setScaleZero(all);
 
       const imacScreenMaterials = getScreenMaterials(a2_imac_screens);
+      const tvScreenMaterials = getScreenMaterials(a2_tv_screens);
       const macScreenMaterials = getScreenMaterials(a2_mac_screens);
       const master = gsap.timeline();
 
@@ -160,7 +218,7 @@ export default function Animation({ onImacScreenAnimComplete }) {
         timelines.push(chairTopLoop);
       }
 
-      // animate2: group1 (1..4) then imacs then imac_screen then mac then mac_screen then flowers
+      // animate2: group1 (1..4) then imacs then imac_screen then tvs then tv_screen then mac then mac_screen then flowers
       show(a2_group1, { duration: 1.0, stagger: 0.14 });
       show(a2_imac, { duration: 1.1, stagger: 0.14 });
       if (imacScreenMaterials.length > 0) {
@@ -170,6 +228,17 @@ export default function Animation({ onImacScreenAnimComplete }) {
           ease: "power1.out",
           onComplete: () => {
             onImacScreenAnimComplete?.();
+          },
+        });
+      }
+      show(a2_tv, { duration: 1.0, stagger: 0.14 });
+      if (tvScreenMaterials.length > 0) {
+        master.to(tvScreenMaterials, {
+          opacity: 1,
+          duration: 0.8,
+          ease: "power1.out",
+          onComplete: () => {
+            onTvScreenAnimComplete?.();
           },
         });
       }
@@ -209,7 +278,7 @@ export default function Animation({ onImacScreenAnimComplete }) {
       mounted = false;
       timelines.forEach((t) => t.kill());
     };
-  }, [scene]);
+  }, [scene, loaded, onImacScreenAnimComplete, onTvScreenAnimComplete]);
 
   return null;
 }
