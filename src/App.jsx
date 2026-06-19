@@ -5,13 +5,15 @@ import { useControls, button, folder, Leva } from "leva";
 import { Room } from "./components/r3f/Room";
 import Animation from "./components/r3f/Animation";
 import { Imac } from "./components/r3f/Imac";
-import {Mac} from "./components/r3f/Mac";
+import { Mac } from "./components/r3f/Mac";
 import { Poster } from "./components/r3f/Poster";
 import { Tv } from "./components/r3f/Tv";
 import BackButton from "./components/ui/BackButton";
+import Drawer from "./components/ui/Drawer";
 import { Hologram } from "./components/r3f/Hologram";
+import { info } from "./helper/data";
 
-import Loading from "./components/ui/Loading"; // adjust path to where you saved Loading.jsx
+import Loading from "./components/ui/Loading";
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -108,16 +110,14 @@ function CameraController() {
 }
 
 export default function App() {
-  useEffect(() => {
-    console.log("App mounted");
-  }, []);
   const [loaded, setLoaded] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const [backButtonTop, setBackButtonTop] = useState(48);
   const [backButtonLeft, setBackButtonLeft] = useState("50%");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
 
-  // ── Separate reset refs for each component ────────────────
   const imacResetRef = useRef(null);
   const macResetRef = useRef(null);
   const posterResetRef = useRef(null);
@@ -137,8 +137,15 @@ export default function App() {
     setShowBackButton(true);
   }, []);
 
+  const handlePosterSelected = useCallback((playerId) => {
+    setSelectedPlayerId(playerId);
+    setDrawerOpen(true);
+  }, []);
+
   const handleResetClick = useCallback(() => {
     setShowBackButton(false);
+    setDrawerOpen(false);
+    setSelectedPlayerId(null);
     imacResetRef.current?.();
     macResetRef.current?.();
     posterResetRef.current?.();
@@ -155,8 +162,8 @@ export default function App() {
   }, []);
 
   const handleMacScreenAnimComplete = useCallback(() => {
-  macScreenAnimCompleteRef.current?.();
-}, []);
+    macScreenAnimCompleteRef.current?.();
+  }, []);
 
   const handleTvScreenAnimComplete = useCallback(() => {
     tvScreenAnimCompleteRef.current?.();
@@ -170,10 +177,10 @@ export default function App() {
           width: "100vw",
           height: "100vh",
           background: "#1a1a1a",
-          visibility: loaded ? "visible" : "hidden", // hides but still loads
+          visibility: loaded ? "visible" : "hidden",
         }}
       >
-        {showBackButton && (
+        {showBackButton && !drawerOpen && (
           <BackButton
             onClick={handleResetClick}
             top={backButtonTop}
@@ -181,7 +188,6 @@ export default function App() {
           />
         )}
         <Leva hidden />
-        {/* <Canvas camera={{ position: [29.61, -24.7, -10.17], fov: 35 }}> */}
         <Canvas camera={{ position: [25.1, -21.5, 6.37], fov: 35 }}>
           <Suspense fallback={null}>
             <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
@@ -211,6 +217,7 @@ export default function App() {
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={posterResetRef}
                 onResetComplete={handleResetComplete}
+                onPosterSelect={handlePosterSelected}
               />
               <Tv
                 onZoomIn={() => handleZoomIn(0, "39%")}
@@ -229,12 +236,16 @@ export default function App() {
             <OrbitControls
               makeDefault
               enabled={orbitEnabled}
-              // target={[-2.11, -30.5, -10.12]}
               target={[-4.5, -30.1, -7.7]}
             />
             <CameraController />
           </Suspense>
         </Canvas>
+        <Drawer
+          open={drawerOpen}
+          player={info.players.find((player) => player.id === selectedPlayerId)}
+          onClose={() => setDrawerOpen(false)}
+        />
       </div>
     </>
   );

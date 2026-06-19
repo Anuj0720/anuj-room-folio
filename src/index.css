@@ -1,6 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss";
-*{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+@theme {
+  --font-bitcount: "Bitcount Prop Single", sans-serif;
+  --font-roboto: "Roboto", sans-serif;
+}
+
+.drawer-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.35) rgba(148, 163, 184, 0.12);
+}
+
+.drawer-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.drawer-scrollbar::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.drawer-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(56, 189, 248, 0.35);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.drawer-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(56, 189, 248, 0.55);
 }

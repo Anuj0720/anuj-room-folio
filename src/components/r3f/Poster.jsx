@@ -10,6 +10,7 @@ export function Poster({
   onZoomComplete,
   resetCameraRef,
   onResetComplete,
+  onPosterSelect,
 }) {
   const { scene } = useGLTF("/models/room.glb");
   const { camera, controls, gl } = useThree();
@@ -40,7 +41,7 @@ export function Poster({
   useEffect(() => {
     if (!scene) return;
 
-    ;[ronaldo, maldini, kroos, kaka].forEach((tex) => {
+    [ronaldo, maldini, kroos, kaka].forEach((tex) => {
       if (!tex) return;
       tex.flipY = false;
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -52,7 +53,7 @@ export function Poster({
       poster2_photo: maldini,
       poster3_photo: kroos,
       poster4_photo: kaka,
-    }
+    };
 
     const posterMeshes = [];
 
@@ -144,23 +145,40 @@ export function Poster({
 
     const handleClick = () => {
       if (!hoveredPoster.current) return;
-      if (isZoomedIn.current) return;
       if (isAnimating.current) return;
 
-      isZoomedIn.current = true;
-      isAnimating.current = true;
-      onZoomIn?.();
+      const selectedName = hoveredPoster.current.name.toLowerCase();
+      const playerId = selectedName.includes("poster1")
+        ? 1
+        : selectedName.includes("poster2")
+          ? 2
+          : selectedName.includes("poster3")
+            ? 3
+            : selectedName.includes("poster4")
+              ? 4
+              : null;
 
-      moveCamera({
-        camera,
-        controls,
-        position: { x: -11, y: -29, z: -7 },
-        target: { x: -11, y: -29, z: -9 },
-        onComplete: () => {
-          isAnimating.current = false;
-          onZoomComplete?.();
-        },
-      });
+      if (!playerId) return;
+
+      if (!isZoomedIn.current) {
+        isZoomedIn.current = true;
+        isAnimating.current = true;
+        onZoomIn?.();
+
+        moveCamera({
+          camera,
+          controls,
+          position: { x: -11, y: -29, z: -7 },
+          target: { x: -11, y: -29, z: -9 },
+          onComplete: () => {
+            isAnimating.current = false;
+            onZoomComplete?.();
+          },
+        });
+        return;
+      }
+
+      onPosterSelect?.(playerId);
     };
 
     gl.domElement.addEventListener("pointermove", handlePointerMove);
