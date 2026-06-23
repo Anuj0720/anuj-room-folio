@@ -173,6 +173,7 @@ export function Poster({
           onComplete: () => {
             isAnimating.current = false;
             onZoomComplete?.();
+            onPosterSelect?.(playerId);
           },
         });
         return;
@@ -193,3 +194,4 @@ export function Poster({
 
   return null;
 }
+ 

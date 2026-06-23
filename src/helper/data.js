@@ -153,3 +153,25 @@ export const info = {
     }
   ]
 };
+
+
+export const personalInfo = {
+  socials: [
+    {
+      name: "github",
+      link: "https://github.com/Anuj0720"
+    },
+    {
+      name: "x",
+      link: "https://x.com/Anuj_0720"
+    },
+    {
+      name: "linkedin",
+      link: "https://www.linkedin.com/in/anuj-jadhav-8814b5302/"
+    },
+    {
+      name: "leetcode",
+      link: "https://leetcode.com/u/Anuj-Jadhav/"
+    }
+  ]
+};
