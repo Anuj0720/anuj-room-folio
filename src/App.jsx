@@ -12,8 +12,8 @@ import BackButton from "./components/ui/BackButton";
 import Drawer from "./components/ui/Drawer";
 import { Hologram } from "./components/r3f/Hologram";
 import { info } from "./helper/data";
-
 import Loading from "./components/ui/Loading";
+import { DayNightToggler } from "./components/ui/DayNightToggler";
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -50,17 +50,10 @@ function CameraController() {
 
   useEffect(() => {
     if (!controls) return;
-
-    const equalsCurrent =
-      camera.position.x === camX &&
-      camera.position.y === camY &&
-      camera.position.z === camZ &&
-      controls.target.x === tarX &&
-      controls.target.y === tarY &&
-      controls.target.z === tarZ;
-
-    if (equalsCurrent) return;
-
+    const eq =
+      camera.position.x === camX && camera.position.y === camY && camera.position.z === camZ &&
+      controls.target.x === tarX  && controls.target.y === tarY  && controls.target.z === tarZ;
+    if (eq) return;
     camera.position.set(camX, camY, camZ);
     controls.target.set(tarX, tarY, tarZ);
     controls.update();
@@ -68,18 +61,12 @@ function CameraController() {
 
   useEffect(() => {
     if (!controls) return;
-
-    const lastValues = {
-      camX: camera.position.x,
-      camY: camera.position.y,
-      camZ: camera.position.z,
-      tarX: controls.target.x,
-      tarY: controls.target.y,
-      tarZ: controls.target.z,
+    const last = {
+      camX: camera.position.x, camY: camera.position.y, camZ: camera.position.z,
+      tarX: controls.target.x, tarY: controls.target.y, tarZ: controls.target.z,
     };
-
     const onUpdate = () => {
-      const nextValues = {
+      const next = {
         camX: parseFloat(camera.position.x.toFixed(3)),
         camY: parseFloat(camera.position.y.toFixed(3)),
         camZ: parseFloat(camera.position.z.toFixed(3)),
@@ -87,21 +74,11 @@ function CameraController() {
         tarY: parseFloat(controls.target.y.toFixed(3)),
         tarZ: parseFloat(controls.target.z.toFixed(3)),
       };
-
-      const changed =
-        nextValues.camX !== lastValues.camX ||
-        nextValues.camY !== lastValues.camY ||
-        nextValues.camZ !== lastValues.camZ ||
-        nextValues.tarX !== lastValues.tarX ||
-        nextValues.tarY !== lastValues.tarY ||
-        nextValues.tarZ !== lastValues.tarZ;
-
+      const changed = Object.keys(next).some((k) => next[k] !== last[k]);
       if (!changed) return;
-
-      Object.assign(lastValues, nextValues);
-      set(nextValues);
+      Object.assign(last, next);
+      set(next);
     };
-
     controls.addEventListener("change", onUpdate);
     return () => controls.removeEventListener("change", onUpdate);
   }, [controls, camera, set]);
@@ -110,22 +87,47 @@ function CameraController() {
 }
 
 export default function App() {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded]                 = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
-  const [orbitEnabled, setOrbitEnabled] = useState(true);
-  const [backButtonTop, setBackButtonTop] = useState(48);
+  const [orbitEnabled, setOrbitEnabled]     = useState(true);
+  const [backButtonTop, setBackButtonTop]   = useState(48);
   const [backButtonLeft, setBackButtonLeft] = useState("50%");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen]         = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [isNight, setIsNight]               = useState(false);
+  const [animReady, setAnimReady]           = useState(false);
 
-  const imacResetRef = useRef(null);
-  const macResetRef = useRef(null);
-  const posterResetRef = useRef(null);
-  const tvResetRef = useRef(null);
-  const hologramResetRef = useRef(null);
+  // Track which screen anims have fired
+  const animDoneRef = useRef({ imac: false, mac: false, tv: false });
+  // Guard so we only call setAnimReady(true) once
+  const animReadySetRef = useRef(false);
+
+  const markAnimReady = useCallback(() => {
+    if (animReadySetRef.current) return;
+    animReadySetRef.current = true;
+    setAnimReady(true);
+  }, []);
+
+  const checkAllAnimDone = useCallback(() => {
+    const { imac, mac, tv } = animDoneRef.current;
+    if (imac && mac && tv) markAnimReady();
+  }, [markAnimReady]);
+
+
+  useEffect(() => {
+    if (!loaded) return;
+    const id = setTimeout(() => markAnimReady(), 4000);
+    return () => clearTimeout(id);
+  }, [loaded, markAnimReady]);
+
+  const imacResetRef              = useRef(null);
+  const macResetRef               = useRef(null);
+  const posterResetRef            = useRef(null);
+  const tvResetRef                = useRef(null);
+  const hologramResetRef          = useRef(null);
   const imacScreenAnimCompleteRef = useRef(null);
-  const macScreenAnimCompleteRef = useRef(null);
-  const tvScreenAnimCompleteRef = useRef(null);
+  const macScreenAnimCompleteRef  = useRef(null);
+  const tvScreenAnimCompleteRef   = useRef(null);
 
   const handleZoomIn = useCallback((top = 48, left = "50%") => {
     setOrbitEnabled(false);
@@ -133,9 +135,7 @@ export default function App() {
     setBackButtonLeft(left);
   }, []);
 
-  const handleZoomComplete = useCallback(() => {
-    setShowBackButton(true);
-  }, []);
+  const handleZoomComplete   = useCallback(() => { setShowBackButton(true); }, []);
 
   const handlePosterSelected = useCallback((playerId) => {
     setSelectedPlayerId(playerId);
@@ -153,33 +153,45 @@ export default function App() {
     hologramResetRef.current?.();
   }, []);
 
-  const handleResetComplete = useCallback(() => {
-    setOrbitEnabled(true);
-  }, []);
+  const handleResetComplete = useCallback(() => { setOrbitEnabled(true); }, []);
 
   const handleImacScreenAnimComplete = useCallback(() => {
     imacScreenAnimCompleteRef.current?.();
-  }, []);
+    animDoneRef.current.imac = true;
+    checkAllAnimDone();
+  }, [checkAllAnimDone]);
 
   const handleMacScreenAnimComplete = useCallback(() => {
     macScreenAnimCompleteRef.current?.();
-  }, []);
+    animDoneRef.current.mac = true;
+    checkAllAnimDone();
+  }, [checkAllAnimDone]);
 
   const handleTvScreenAnimComplete = useCallback(() => {
     tvScreenAnimCompleteRef.current?.();
-  }, []);
+    animDoneRef.current.tv = true;
+    checkAllAnimDone();
+  }, [checkAllAnimDone]);
 
   return (
     <>
       {!loaded && <Loading onComplete={() => setLoaded(true)} />}
       <div
         style={{
-          width: "100vw",
-          height: "100vh",
+          width:      "100vw",
+          height:     "100vh",
           background: "#1a1a1a",
           visibility: loaded ? "visible" : "hidden",
         }}
       >
+        {/* Toggler — hidden until animReady, hides again when drawer opens */}
+        <DayNightToggler
+          isNight={isNight}
+          onToggle={setIsNight}
+          drawerOpen={drawerOpen}
+          animReady={animReady}
+        />
+
         {showBackButton && !drawerOpen && (
           <BackButton
             onClick={handleResetClick}
@@ -187,11 +199,12 @@ export default function App() {
             left={backButtonLeft}
           />
         )}
+
         <Leva hidden />
         <Canvas camera={{ position: [25.1, -21.5, 6.37], fov: 35 }}>
           <Suspense fallback={null}>
             <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
-              <Room />
+              <Room isNight={isNight} />
               <Animation
                 loaded={loaded}
                 onImacScreenAnimComplete={handleImacScreenAnimComplete}
@@ -241,10 +254,12 @@ export default function App() {
             <CameraController />
           </Suspense>
         </Canvas>
+
         <Drawer
           open={drawerOpen}
-          player={info.players.find((player) => player.id === selectedPlayerId)}
+          player={info.players.find((p) => p.id === selectedPlayerId)}
           onClose={() => setDrawerOpen(false)}
+          isNight={isNight}
         />
       </div>
     </>
