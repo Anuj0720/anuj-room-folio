@@ -2,16 +2,16 @@ import * as THREE from 'three';
 
 // Glass Material
 export const glassMaterial = new THREE.MeshPhysicalMaterial({
-  transmission: 1,
-  thickness: 0.5,
+  transmission: 0,          
+  transparent: true,
+  opacity: 0.2,            
   roughness: 0,
   metalness: 0,
   ior: 1.5,
-  transparent: true,
-  opacity: 1,
+  color: new THREE.Color("#ffffff"),
   envMapIntensity: 1,
-  attenuationDistance: 0.5,
-  attenuationColor: new THREE.Color("#ffffff"),
+  side: THREE.DoubleSide,  
+  depthWrite: false,        
 });
 
 export const posterGlassMaterial = new THREE.MeshPhysicalMaterial({

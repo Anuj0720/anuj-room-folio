@@ -100,6 +100,7 @@ export function Room({ isNight = false }) {
       }
     });
 
+
     nightMeshesRef.current = nightMeshes;
   }, [scene, firstDayTex, secondDayTex, thirdDayTex,
       firstNightTex, secondNightTex, thirdNightTex]);
