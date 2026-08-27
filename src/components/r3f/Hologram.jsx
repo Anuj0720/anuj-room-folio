@@ -8,6 +8,7 @@ import {
   getPokemonVideoTexture,
   getPokemonVideoElement,
 } from "../../helper/video";
+import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
 export function Hologram({
   onZoomIn,
@@ -101,6 +102,7 @@ export function Hologram({
 
   useEffect(() => {
     if (!gl || !camera || !controls) return;
+    registerCursorTarget(gl.domElement);
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -115,10 +117,10 @@ export function Hologram({
         : [];
 
       if (intersects.length > 0) {
-        gl.domElement.style.cursor = "pointer";
+        setHover("hologram", true);
         hoveredMesh.current = intersects[0].object;
       } else {
-        gl.domElement.style.cursor = "default";
+        setHover("hologram", false);
         hoveredMesh.current = null;
       }
     };
@@ -155,7 +157,7 @@ export function Hologram({
     gl.domElement.addEventListener("click", handleClick);
 
     return () => {
-      gl.domElement.style.cursor = "default";
+      clearHover("hologram");
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("click", handleClick);
     };

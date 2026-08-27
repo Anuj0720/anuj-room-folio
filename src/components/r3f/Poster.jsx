@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { moveCamera } from "../../helper/cameraMover";
 import { posterGlassMaterial } from "../../helper/glass";
+import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
 export function Poster({
   onZoomIn,
@@ -119,6 +120,7 @@ export function Poster({
   // ── Pointer move + click ──────────────────────────────────
   useEffect(() => {
     if (!gl || !camera || !controls) return;
+    registerCursorTarget(gl.domElement);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -135,10 +137,10 @@ export function Poster({
       );
 
       if (intersects.length > 0) {
-        gl.domElement.style.cursor = "pointer";
+        setHover("poster", true);
         hoveredPoster.current = intersects[0].object;
       } else {
-        gl.domElement.style.cursor = "default";
+        setHover("poster", false);
         hoveredPoster.current = null;
       }
     };
@@ -186,7 +188,7 @@ export function Poster({
     gl.domElement.addEventListener("click", handleClick);
 
     return () => {
-      gl.domElement.style.cursor = "default";
+      clearHover("poster");
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("click", handleClick);
     };

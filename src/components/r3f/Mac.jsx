@@ -7,6 +7,7 @@ import {
   getOnepieceVideoTexture,
   getOnepieceVideoElement,
 } from "../../helper/video";
+import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
 export function Mac({
   onZoomIn,
@@ -150,6 +151,7 @@ export function Mac({
 
   useEffect(() => {
     if (!gl || !camera || !controls) return;
+    registerCursorTarget(gl.domElement);
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -164,10 +166,10 @@ export function Mac({
         : [];
 
       if (intersects.length > 0) {
-        gl.domElement.style.cursor = "pointer";
+        setHover("mac", true);
         hoveredMesh.current = intersects[0].object;
       } else {
-        gl.domElement.style.cursor = "default";
+        setHover("mac", false);
         hoveredMesh.current = null;
       }
     };
@@ -204,7 +206,7 @@ export function Mac({
     gl.domElement.addEventListener("click", handleClick);
 
     return () => {
-      gl.domElement.style.cursor = "default";
+      clearHover("mac");
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("click", handleClick);
     };

@@ -7,6 +7,7 @@ import {
   getSpidermanVideoTexture,
   getSpidermanVideoElement,
 } from "../../helper/video";
+import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
 export function Tv({
   onZoomIn,
@@ -121,6 +122,7 @@ export function Tv({
 
   useEffect(() => {
     if (!gl || !camera || !controls) return;
+    registerCursorTarget(gl.domElement);
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -135,10 +137,10 @@ export function Tv({
         : [];
 
       if (intersects.length > 0) {
-        gl.domElement.style.cursor = "pointer";
+        setHover("tv", true);
         hoveredMesh.current = intersects[0].object;
       } else {
-        gl.domElement.style.cursor = "default";
+        setHover("tv", false);
         hoveredMesh.current = null;
       }
     };
@@ -175,7 +177,7 @@ export function Tv({
     gl.domElement.addEventListener("click", handleClick);
 
     return () => {
-      gl.domElement.style.cursor = "default";
+      clearHover("tv");
       gl.domElement.removeEventListener("pointermove", handlePointerMove);
       gl.domElement.removeEventListener("click", handleClick);
     };
