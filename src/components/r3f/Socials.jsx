@@ -36,12 +36,7 @@ export function Socials() {
   const socialMeshesRef = useRef([]);
   const hoveredEntryRef = useRef(null);
 
-  // ── Find social meshes in the scene ───────────────────────
-  // Runs after Room's own effect (Room is mounted first in App.jsx), so
-  // by the time we traverse, Room has already created the "_night_overlay"
-  // clones for these meshes — we deliberately skip those clones here and
-  // look each one up as a sibling instead, so day + night layers stay
-  // perfectly in sync when we scale on hover.
+
   useEffect(() => {
     if (!scene) return;
 
@@ -91,7 +86,6 @@ export function Socials() {
     const pointer = new THREE.Vector2();
 
     // Scales the day mesh AND its night-overlay sibling (if any) together,
-    // so the two layers never drift apart and expose one another.
     const scaleEntry = (entry, hovered) => {
       const targetScale = hovered ? HOVER_SCALE : 1;
 

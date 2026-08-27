@@ -50,14 +50,7 @@ export function Room({ isNight = false }) {
     scene.traverse((child) => {
       if (!child.isMesh) return;
 
-      // Normalize once — matching used to mix cases inconsistently
-      // ("background" was only ever checked lowercase, "First"/"Second"
-      // had explicit case duplicates), so any mesh whose actual GLB name
-      // didn't happen to match the exact hardcoded casing silently fell
-      // through with dayTex/nightTex left null. That mesh then kept
-      // child.material.map (its original baked/day texture) forever and
-      // never got a night overlay clone — which is why it kept showing
-      // the day texture even after switching to night mode.
+      
       const name = child.name.toLowerCase();
 
       if (name.includes("showcase_glass")) {

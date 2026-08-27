@@ -201,7 +201,7 @@ export default function App() {
           />
         )}
 
-        <Leva hidden />
+        <Leva hidden  />
         <Canvas camera={{ position: [25.1, -21.5, 6.37], fov: 35 }}>
           <Suspense fallback={null}>
             <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
