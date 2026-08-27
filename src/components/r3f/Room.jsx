@@ -10,6 +10,12 @@ useGLTF.setDecoderPath(
 
 const LERP_SPEED = 0.03;
 
+// The social sign meshes (linkedin, x_bilboard, leetcode, github) are baked
+// into the "second" texture atlas, but their names don't contain "second",
+// so the day/night matching below needs to check for them explicitly —
+// otherwise they fall through with no night texture at all.
+const SECOND_GROUP_EXTRA_MATCHES = ["linkedin", "x_bilboard", "leetcode", "github"];
+
 export function Room({ isNight = false }) {
   const { scene } = useGLTF("/models/room.glb");
 
@@ -44,9 +50,17 @@ export function Room({ isNight = false }) {
     scene.traverse((child) => {
       if (!child.isMesh) return;
 
-      const name = child.name;
+      // Normalize once — matching used to mix cases inconsistently
+      // ("background" was only ever checked lowercase, "First"/"Second"
+      // had explicit case duplicates), so any mesh whose actual GLB name
+      // didn't happen to match the exact hardcoded casing silently fell
+      // through with dayTex/nightTex left null. That mesh then kept
+      // child.material.map (its original baked/day texture) forever and
+      // never got a night overlay clone — which is why it kept showing
+      // the day texture even after switching to night mode.
+      const name = child.name.toLowerCase();
 
-      if (name.includes("Showcase_glass")) {
+      if (name.includes("showcase_glass")) {
         child.material = glassMaterial;
         return;
       }
@@ -55,19 +69,22 @@ export function Room({ isNight = false }) {
       let dayTex = null;
       let nightTex = null;
 
-      if (name.includes("First") || name.includes("first")) {
+      if (name.includes("first")) {
         dayTex = firstDayTex;
         nightTex = firstNightTex;
       } else if (
-        name.includes("Second") ||
-        name.includes("_second") ||
-        name.includes("second")
+        name.includes("second") ||
+        SECOND_GROUP_EXTRA_MATCHES.some((match) => name.includes(match))
       ) {
         dayTex = secondDayTex;
         nightTex = secondNightTex;
       } else if (name.includes("background")) {
         dayTex = thirdDayTex;
         nightTex = thirdNightTex;
+      } else if (import.meta.env.DEV) {
+        // Helps you spot any mesh that's silently not getting a
+        // day/night texture pair at all — check the browser console.
+        console.warn(`[Room] "${child.name}" matched no day/night texture set — it will keep its original baked material.`);
       }
 
       // Day layer (base mesh) — use MeshBasicMaterial so baked lighting

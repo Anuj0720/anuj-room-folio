@@ -11,6 +11,7 @@ import { Tv } from "./components/r3f/Tv";
 import BackButton from "./components/ui/BackButton";
 import Drawer from "./components/ui/Drawer";
 import { Hologram } from "./components/r3f/Hologram";
+import { Socials } from "./components/r3f/Socials";
 import { info } from "./helper/data";
 import Loading from "./components/ui/Loading";
 import { DayNightToggler } from "./components/ui/DayNightToggler";
@@ -245,6 +246,7 @@ export default function App() {
                 resetCameraRef={hologramResetRef}
                 onResetComplete={handleResetComplete}
               />
+              <Socials />
             </Stage>
             <OrbitControls
               makeDefault
