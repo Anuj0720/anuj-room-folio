@@ -2,7 +2,7 @@ import { useGLTF, Html } from "@react-three/drei";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { moveCamera } from "../../helper/cameraMover";
+import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
 
 const toRad = THREE.MathUtils.degToRad;
 
@@ -19,18 +19,7 @@ export function Imac({
   const [showOverlay, setShowOverlay] = useState(true);
   const [showIframe, setShowIframe] = useState(false);
   const isAnimating = useRef(false);
-  const defaultCamPos = useRef(new THREE.Vector3());
-  const defaultTarget = useRef(new THREE.Vector3());
 
-  // ── Save default camera on mount ─────────────────────────
-  useEffect(() => {
-    // Wait a frame so OrbitControls target is ready
-    const id = setTimeout(() => {
-      defaultCamPos.current.copy(camera.position);
-      if (controls) defaultTarget.current.copy(controls.target);
-    }, 100);
-    return () => clearTimeout(id);
-  }, [camera, controls]);
 
   // ── Find imac_screen mesh ─────────────────────────────────
   useEffect(() => {
@@ -76,16 +65,8 @@ export function Imac({
     moveCamera({
       camera,
       controls,
-      position: {
-        x: defaultCamPos.current.x,
-        y: defaultCamPos.current.y,
-        z: defaultCamPos.current.z,
-      },
-      target: {
-        x: defaultTarget.current.x,
-        y: defaultTarget.current.y,
-        z: defaultTarget.current.z,
-      },
+      position: DEFAULT_CAMERA.position,
+      target: DEFAULT_CAMERA.target,
       onComplete: () => {
         isAnimating.current = false;
         setShowOverlay(true);

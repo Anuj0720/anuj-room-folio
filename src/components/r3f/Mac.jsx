@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { moveCamera } from "../../helper/cameraMover";
+import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
 import {
   getOnepieceVideoTexture,
   getOnepieceVideoElement,
@@ -20,21 +20,12 @@ export function Mac({
   const { camera, controls, gl, scene } = useThree();
   const isAnimating = useRef(false);
   const isZoomedIn = useRef(false);
-  const defaultCamPos = useRef(new THREE.Vector3());
-  const defaultTarget = useRef(new THREE.Vector3());
   const macScreenRef = useRef(null);
   const macVideoMaterialRef = useRef(null);
   const macVideoTextureRef = useRef(null);
   const macVideoElement = useRef(null);
   const hoveredMesh = useRef(null);
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      defaultCamPos.current.copy(camera.position);
-      if (controls) defaultTarget.current.copy(controls.target);
-    }, 100);
-    return () => clearTimeout(id);
-  }, [camera, controls]);
 
   useEffect(() => {
     if (!scene) return;
@@ -102,16 +93,8 @@ export function Mac({
     moveCamera({
       camera,
       controls,
-      position: {
-        x: defaultCamPos.current.x,
-        y: defaultCamPos.current.y,
-        z: defaultCamPos.current.z,
-      },
-      target: {
-        x: defaultTarget.current.x,
-        y: defaultTarget.current.y,
-        z: defaultTarget.current.z,
-      },
+      position: DEFAULT_CAMERA.position,
+      target: DEFAULT_CAMERA.target,
       onComplete: () => {
         isAnimating.current = false;
         isZoomedIn.current = false;
