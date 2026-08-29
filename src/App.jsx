@@ -15,6 +15,10 @@ import { Socials } from "./components/r3f/Socials";
 import { info } from "./helper/data";
 import Loading from "./components/ui/Loading";
 import { DayNightToggler } from "./components/ui/DayNightToggler";
+import { Showcase } from "./components/r3f/Showcase";
+import ShowcaseControls from "./components/ui/ShowcaseControls";
+import { ShowcaseHoverInteraction } from "./components/r3f/ShowcaseHoverInteraction";
+import { DEFAULT_CAMERA } from "./helper/cameraMover";
 
 function CameraController() {
   const { camera, controls } = useThree();
@@ -23,23 +27,25 @@ function CameraController() {
     "Camera",
     () => ({
       Position: folder({
-        camX: { value: 25.1, step: 0.1 },
-        camY: { value: -21.5, step: 0.1 },
-        camZ: { value: 6.37, step: 0.11 },
+        camX: { value: DEFAULT_CAMERA.position.x, step: 0.1 },
+        camY: { value: DEFAULT_CAMERA.position.y, step: 0.1 },
+        camZ: { value: DEFAULT_CAMERA.position.z, step: 0.11 },
       }),
       Target: folder({
-        tarX: { value: -4.5, step: 0.1 },
-        tarY: { value: -30.1, step: 0.1 },
-        tarZ: { value: -10.12, step: 0.1 },
+        tarX: { value: DEFAULT_CAMERA.target.x, step: 0.1 },
+        tarY: { value: DEFAULT_CAMERA.target.y, step: 0.1 },
+        tarZ: { value: DEFAULT_CAMERA.target.z, step: 0.1 },
       }),
       "Copy Values": button(() => {
         const pos = camera.position;
         const tar = controls?.target;
+
         console.log("📷 Camera position:", {
           x: parseFloat(pos.x.toFixed(3)),
           y: parseFloat(pos.y.toFixed(3)),
           z: parseFloat(pos.z.toFixed(3)),
         });
+
         console.log("🎯 Controls target:", {
           x: parseFloat(tar.x.toFixed(3)),
           y: parseFloat(tar.y.toFixed(3)),
@@ -51,10 +57,17 @@ function CameraController() {
 
   useEffect(() => {
     if (!controls) return;
+
     const eq =
-      camera.position.x === camX && camera.position.y === camY && camera.position.z === camZ &&
-      controls.target.x === tarX  && controls.target.y === tarY  && controls.target.z === tarZ;
+      camera.position.x === camX &&
+      camera.position.y === camY &&
+      camera.position.z === camZ &&
+      controls.target.x === tarX &&
+      controls.target.y === tarY &&
+      controls.target.z === tarZ;
+
     if (eq) return;
+
     camera.position.set(camX, camY, camZ);
     controls.target.set(tarX, tarY, tarZ);
     controls.update();
@@ -62,10 +75,16 @@ function CameraController() {
 
   useEffect(() => {
     if (!controls) return;
+
     const last = {
-      camX: camera.position.x, camY: camera.position.y, camZ: camera.position.z,
-      tarX: controls.target.x, tarY: controls.target.y, tarZ: controls.target.z,
+      camX: camera.position.x,
+      camY: camera.position.y,
+      camZ: camera.position.z,
+      tarX: controls.target.x,
+      tarY: controls.target.y,
+      tarZ: controls.target.z,
     };
+
     const onUpdate = () => {
       const next = {
         camX: parseFloat(camera.position.x.toFixed(3)),
@@ -75,11 +94,14 @@ function CameraController() {
         tarY: parseFloat(controls.target.y.toFixed(3)),
         tarZ: parseFloat(controls.target.z.toFixed(3)),
       };
-      const changed = Object.keys(next).some((k) => next[k] !== last[k]);
+
+      const changed = Object.keys(next).some((key) => next[key] !== last[key]);
       if (!changed) return;
+
       Object.assign(last, next);
       set(next);
     };
+
     controls.addEventListener("change", onUpdate);
     return () => controls.removeEventListener("change", onUpdate);
   }, [controls, camera, set]);
@@ -88,19 +110,25 @@ function CameraController() {
 }
 
 export default function App() {
-  const [loaded, setLoaded]                 = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
-  const [orbitEnabled, setOrbitEnabled]     = useState(true);
-  const [backButtonTop, setBackButtonTop]   = useState(48);
+  const [orbitEnabled, setOrbitEnabled] = useState(true);
+  const [backButtonTop, setBackButtonTop] = useState(48);
   const [backButtonLeft, setBackButtonLeft] = useState("50%");
-  const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [isNight, setIsNight]               = useState(false);
-  const [animReady, setAnimReady]           = useState(false);
+  const [isNight, setIsNight] = useState(false);
+  const [animReady, setAnimReady] = useState(false);
 
-  // Track which screen anims have fired
+  // Exactly one showcase target can be selected at a time.
+  // It is selected after hovering the matching mesh and the camera
+  // finishing its move.
+  const [selectedShowcaseId, setSelectedShowcaseId] = useState(null);
+
+  // Exactly one dissolve effect can run at a time.
+  const [activeDissolveId, setActiveDissolveId] = useState(null);
+
   const animDoneRef = useRef({ imac: false, mac: false, tv: false });
-  // Guard so we only call setAnimReady(true) once
   const animReadySetRef = useRef(false);
 
   const markAnimReady = useCallback(() => {
@@ -114,21 +142,23 @@ export default function App() {
     if (imac && mac && tv) markAnimReady();
   }, [markAnimReady]);
 
-
   useEffect(() => {
     if (!loaded) return;
+
     const id = setTimeout(() => markAnimReady(), 4000);
     return () => clearTimeout(id);
   }, [loaded, markAnimReady]);
 
-  const imacResetRef              = useRef(null);
-  const macResetRef               = useRef(null);
-  const posterResetRef            = useRef(null);
-  const tvResetRef                = useRef(null);
-  const hologramResetRef          = useRef(null);
+  const imacResetRef = useRef(null);
+  const macResetRef = useRef(null);
+  const posterResetRef = useRef(null);
+  const tvResetRef = useRef(null);
+  const hologramResetRef = useRef(null);
+  const showcaseResetRef = useRef(null);
+
   const imacScreenAnimCompleteRef = useRef(null);
-  const macScreenAnimCompleteRef  = useRef(null);
-  const tvScreenAnimCompleteRef   = useRef(null);
+  const macScreenAnimCompleteRef = useRef(null);
+  const tvScreenAnimCompleteRef = useRef(null);
 
   const handleZoomIn = useCallback((top = 48, left = "50%") => {
     setOrbitEnabled(false);
@@ -136,7 +166,9 @@ export default function App() {
     setBackButtonLeft(left);
   }, []);
 
-  const handleZoomComplete   = useCallback(() => { setShowBackButton(true); }, []);
+  const handleZoomComplete = useCallback(() => {
+    setShowBackButton(true);
+  }, []);
 
   const handlePosterSelected = useCallback((playerId) => {
     setSelectedPlayerId(playerId);
@@ -144,17 +176,55 @@ export default function App() {
   }, []);
 
   const handleResetClick = useCallback(() => {
+    // For showcase targets, Back also stops the dissolve and restores
+    // the original mesh material.
+    setActiveDissolveId(null);
+    setSelectedShowcaseId(null);
     setShowBackButton(false);
     setDrawerOpen(false);
     setSelectedPlayerId(null);
+
     imacResetRef.current?.();
     macResetRef.current?.();
     posterResetRef.current?.();
     tvResetRef.current?.();
     hologramResetRef.current?.();
+    showcaseResetRef.current?.();
   }, []);
 
-  const handleResetComplete = useCallback(() => { setOrbitEnabled(true); }, []);
+  const handleResetComplete = useCallback(() => {
+    setOrbitEnabled(true);
+  }, []);
+
+  const handleShowcaseZoomStart = useCallback(() => {
+    setOrbitEnabled(false);
+    setShowBackButton(false);
+  }, []);
+
+  const handleShowcaseTargetSelected = useCallback((id) => {
+    setSelectedShowcaseId(id);
+    setActiveDissolveId(null);
+
+    if (id) {
+      setShowBackButton(true);
+    }
+  }, []);
+
+  const handleShowcaseResetComplete = useCallback(() => {
+    setSelectedShowcaseId(null);
+    setActiveDissolveId(null);
+    setShowBackButton(false);
+    setOrbitEnabled(true);
+  }, []);
+
+  const handleStartDissolve = useCallback(() => {
+    if (!selectedShowcaseId) return;
+    setActiveDissolveId(selectedShowcaseId);
+  }, [selectedShowcaseId]);
+
+  const handleStopDissolve = useCallback(() => {
+    setActiveDissolveId(null);
+  }, []);
 
   const handleImacScreenAnimComplete = useCallback(() => {
     imacScreenAnimCompleteRef.current?.();
@@ -177,15 +247,15 @@ export default function App() {
   return (
     <>
       {!loaded && <Loading onComplete={() => setLoaded(true)} />}
+
       <div
         style={{
-          width:      "100vw",
-          height:     "100vh",
+          width: "100vw",
+          height: "100vh",
           background: "#1a1a1a",
           visibility: loaded ? "visible" : "hidden",
         }}
       >
-        {/* Toggler — hidden until animReady, hides again when drawer opens */}
         <DayNightToggler
           isNight={isNight}
           onToggle={setIsNight}
@@ -193,7 +263,10 @@ export default function App() {
           animReady={animReady}
         />
 
-        {showBackButton && !drawerOpen && (
+        {/* The old global Back button is hidden while a showcase target
+            is selected because ShowcaseControls renders its own Back
+            button at that target's configured position. */}
+        {showBackButton && !drawerOpen && !selectedShowcaseId && (
           <BackButton
             onClick={handleResetClick}
             top={backButtonTop}
@@ -201,17 +274,33 @@ export default function App() {
           />
         )}
 
-        <Leva hidden  />
-        <Canvas camera={{ position: [25.1, -21.5, 6.37], fov: 35 }}>
+        {/* ONLY the selected showcase target gets these three buttons. */}
+        <ShowcaseControls
+          selectedId={selectedShowcaseId}
+          isDissolving={activeDissolveId === selectedShowcaseId}
+          onStart={handleStartDissolve}
+          onStop={handleStopDissolve}
+          onBack={handleResetClick}
+        />
+
+        <Leva />
+
+        <Canvas camera={{ position: [DEFAULT_CAMERA.position.x, DEFAULT_CAMERA.position.y, DEFAULT_CAMERA.position.z], fov: 35 }}>
           <Suspense fallback={null}>
-            <Stage environment="apartment" intensity={0.5} adjustCamera={false}>
+            <Stage
+              environment="apartment"
+              intensity={0.5}
+              adjustCamera={false}
+            >
               <Room isNight={isNight} />
+
               <Animation
                 loaded={loaded}
                 onImacScreenAnimComplete={handleImacScreenAnimComplete}
                 onTvScreenAnimComplete={handleTvScreenAnimComplete}
                 onMacScreenAnimComplete={handleMacScreenAnimComplete}
               />
+
               <Imac
                 onZoomIn={() => handleZoomIn(48)}
                 onZoomComplete={handleZoomComplete}
@@ -219,6 +308,7 @@ export default function App() {
                 onResetComplete={handleResetComplete}
                 imacScreenAnimCompleteRef={imacScreenAnimCompleteRef}
               />
+
               <Mac
                 onZoomIn={() => handleZoomIn(16)}
                 onZoomComplete={handleZoomComplete}
@@ -226,6 +316,7 @@ export default function App() {
                 onResetComplete={handleResetComplete}
                 macScreenAnimCompleteRef={macScreenAnimCompleteRef}
               />
+
               <Poster
                 onZoomIn={() => handleZoomIn(28)}
                 onZoomComplete={handleZoomComplete}
@@ -233,6 +324,7 @@ export default function App() {
                 onResetComplete={handleResetComplete}
                 onPosterSelect={handlePosterSelected}
               />
+
               <Tv
                 onZoomIn={() => handleZoomIn(0, "39%")}
                 onZoomComplete={handleZoomComplete}
@@ -240,19 +332,36 @@ export default function App() {
                 onResetComplete={handleResetComplete}
                 tvScreenAnimCompleteRef={tvScreenAnimCompleteRef}
               />
+
               <Hologram
                 onZoomIn={() => handleZoomIn(58, "44%")}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={hologramResetRef}
                 onResetComplete={handleResetComplete}
               />
+
               <Socials />
+
+              {/* Dissolve renderer. It only receives the single active
+                  id, so no other showcase mesh can dissolve. */}
+              <Showcase activeId={activeDissolveId} />
+
+              {/* Hovering a configured showcase mesh moves the camera to
+                  that mesh's own camera/target pair. */}
+              <ShowcaseHoverInteraction
+                onZoomStart={handleShowcaseZoomStart}
+                onTargetSelected={handleShowcaseTargetSelected}
+                resetCameraRef={showcaseResetRef}
+                onResetComplete={handleShowcaseResetComplete}
+              />
             </Stage>
+
             <OrbitControls
               makeDefault
               enabled={orbitEnabled}
-              target={[-4.5, -30.1, -7.7]}
+              target={[DEFAULT_CAMERA.target.x, DEFAULT_CAMERA.target.y, DEFAULT_CAMERA.target.z]}
             />
+
             <CameraController />
           </Suspense>
         </Canvas>

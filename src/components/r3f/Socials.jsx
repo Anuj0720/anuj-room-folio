@@ -6,23 +6,13 @@ import gsap from "gsap";
 import { personalInfo } from "../../helper/data";
 import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
-// Maps a mesh name (lowercased) to the matching entry in personalInfo.socials.
-// The mesh in the model is called "x_bilboard" but the social entry is
-// named "x", so we match by "does the mesh name include the social name"
-// rather than requiring an exact match.
+
 function findSocialForMeshName(meshName) {
   const name = meshName.toLowerCase();
   return personalInfo.socials.find((social) => name.includes(social.name));
 }
 
-// Room.jsx clones each day/night mesh and names the clone
-// "<originalName>_night_overlay" to crossfade between day/night textures.
-// Since that clone's name still contains e.g. "github", our substring match
-// above would treat it as its own separate social mesh — giving each social
-// TWO independent raycast targets that could scale out of sync and expose
-// the day layer poking out from behind the night overlay. We only want the
-// original ("day") mesh as the interactive target, and we scale its night
-// overlay sibling in lockstep whenever the day mesh scales.
+
 const NIGHT_OVERLAY_SUFFIX = "_night_overlay";
 
 const HOVER_SCALE = 1.1;

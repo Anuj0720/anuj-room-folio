@@ -162,7 +162,7 @@ export const personalInfo = {
       link: "https://github.com/Anuj0720"
     },
     {
-      name: "x",
+      name: "x_bilboard",
       link: "https://x.com/Anuj_0720"
     },
     {
