@@ -10,10 +10,6 @@ useGLTF.setDecoderPath(
 
 const LERP_SPEED = 0.03;
 
-// The social sign meshes (linkedin, x_bilboard, leetcode, github) are baked
-// into the "second" texture atlas, but their names don't contain "second",
-// so the day/night matching below needs to check for them explicitly —
-// otherwise they fall through with no night texture at all.
 const SECOND_GROUP_EXTRA_MATCHES = ["linkedin", "x_bilboard", "leetcode", "github"];
 
 export function Room({ isNight = false }) {
@@ -55,6 +51,8 @@ export function Room({ isNight = false }) {
 
       if (name.includes("showcase_glass")) {
         child.material = glassMaterial;
+
+        child.renderOrder = 20;
         return;
       }
 
@@ -74,10 +72,6 @@ export function Room({ isNight = false }) {
       } else if (name.includes("background")) {
         dayTex = thirdDayTex;
         nightTex = thirdNightTex;
-      } else if (import.meta.env.DEV) {
-        // Helps you spot any mesh that's silently not getting a
-        // day/night texture pair at all — check the browser console.
-        console.warn(`[Room] "${child.name}" matched no day/night texture set — it will keep its original baked material.`);
       }
 
       // Day layer (base mesh) — use MeshBasicMaterial so baked lighting

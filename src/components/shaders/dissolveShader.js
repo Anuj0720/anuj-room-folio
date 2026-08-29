@@ -1,29 +1,5 @@
 import * as THREE from "three";
 
-// ─────────────────────────────────────────────────────────────────
-// Dissolve Effect
-//
-// Two pieces working off the same Perlin-noise pattern:
-//
-//   1. A patch applied to the mesh's own material (via onBeforeCompile)
-//      that discards any fragment whose noise value is below uProgress,
-//      and paints a thin glowing band where the noise value sits just
-//      above it — the dissolving edge.
-//   2. A particle system sampled from random points across the mesh's
-//      own triangle surface (not just its original vertices — see
-//      sampleSurfacePoints below), using the same noise/progress/edge
-//      values, so particles only appear right where the surface is
-//      currently dissolving, then drift outward before resetting.
-//
-// uProgress is driven back and forth automatically (see
-// createDissolveEffect) with a cosine ping-pong, so it eases into
-// fully dissolved and eases back to fully formed instead of moving
-// at a constant rate.
-// ─────────────────────────────────────────────────────────────────
-
-// Classic 3D Perlin noise (Stefan Gustavson / Ashima Arts' widely-used
-// public GLSL implementation — the same "cnoise" building block that
-// shows up across most three.js noise-based effects).
 const perlinNoiseGLSL = /* glsl */ `
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -142,15 +118,11 @@ export function getAverageTextureColor(texture) {
     color.setHSL(hsl.h, Math.min(1, hsl.s * 1.3 + 0.2), Math.min(0.75, hsl.l * 1.4 + 0.15));
     return color;
   } catch {
-    // getImageData throws if the texture's image is cross-origin
-    // without the right headers — fall back to letting the caller
-    // use a default color instead.
+
     return null;
   }
 }
 
-// ── Surface patch: injects the discard + edge-glow logic into the
-//    mesh's existing material without replacing it wholesale ───────
 
 export function patchDissolveMaterial(material, options = {}) {
   const {
@@ -285,8 +257,6 @@ function sampleSurfacePoints(geometry, count) {
   return positions;
 }
 
-// ── Particle system: same noise pattern, sampled densely across the
-//    mesh's surface, drifting outward once in the edge band ────────
 
 export function createDissolveParticles(mesh, options = {}) {
   const {
@@ -308,10 +278,6 @@ export function createDissolveParticles(mesh, options = {}) {
   const angle = new Float32Array(count);
   const dist = new Float32Array(count);
 
-  // The particle Points object is attached to the mesh, so local +Y is
-  // NOT necessarily world-up. Convert the real world-up direction into
-  // this mesh's local space. This keeps the particles rising upward in
-  // the scene even when the Pokémon/model is rotated.
   mesh.updateMatrixWorld(true);
   const inverseWorld = mesh.matrixWorld.clone().invert();
   const worldUpLocal = new THREE.Vector3(0, 1, 0)
@@ -319,10 +285,7 @@ export function createDissolveParticles(mesh, options = {}) {
     .normalize();
 
   for (let i = 0; i < count; i++) {
-    // Strong upward emission with a small amount of sideways spread.
-    // The upward component is deliberately much stronger than the
-    // horizontal component so the dissolve reads like rising particles
-    // rather than particles simply drifting away from the surface.
+ 
     const upward = Math.random() * 0.9 + 0.7;
     const spreadX = (Math.random() - 0.5) * 0.3;
     const spreadY = (Math.random() - 0.5) * 0.08;
@@ -366,10 +329,7 @@ export function createDissolveParticles(mesh, options = {}) {
       ${perlinNoiseGLSL}
 
       void main() {
-        // Noise is sampled from each particle's ORIGINAL surface
-        // position, not its drifted current one, so a particle stays
-        // tied to the same point on the mesh's dissolve pattern for
-        // its whole life instead of resampling as it flies off.
+       
         vNoise = cnoise(aInitPos * uFreq) * uAmp;
         vAngle = aAngle;
 
@@ -412,6 +372,8 @@ export function createDissolveParticles(mesh, options = {}) {
 
   const points = new THREE.Points(geometry, material);
   points.frustumCulled = false;
+
+  points.renderOrder = 20;
 
   const state = { speedFactor: speed * 0.035 };
   const vA = new THREE.Vector3();
@@ -470,21 +432,14 @@ export function createDissolveParticles(mesh, options = {}) {
   };
 }
 
-// ── Top-level controller: patches the mesh, builds the particles,
-//    auto-loops uProgress back and forth, and exposes setParams so
-//    live controls (e.g. Leva) can retune a running effect. ────────
+
 
 export function createDissolveEffect(mesh, options = {}) {
   const settings = {
-    cycleDuration: options.cycleDuration ?? 16, // seconds for one full dissolve + reform loop
-    progressRange: options.progressRange ?? [-1.2, 1.2], // start fully formed, then dissolve slowly
+    cycleDuration: options.cycleDuration ?? 16, 
+    progressRange: options.progressRange ?? [-1.2, 1.2],
     phase: options.phase ?? 0,
   };
-
-  // Each Play creates a fresh effect. Do NOT use the global scene clock
-  // directly as the cycle clock, otherwise pressing Play can jump into
-  // the middle/end of the dissolve. The first update establishes a local
-  // start time, so every Play begins fully formed and then dissolves.
   let startTime = null;
 
   const {
@@ -520,9 +475,6 @@ export function createDissolveEffect(mesh, options = {}) {
   function update(elapsedTime) {
     if (startTime === null) startTime = elapsedTime;
 
-    // Local cosine ping-pong: every Play starts at the fully formed
-    // state, slowly dissolves to invisible, then slowly reforms, and
-    // repeats forever. There is no initial jump to a random clock phase.
     const [minProgress, maxProgress] = settings.progressRange;
     const localTime = Math.max(0, elapsedTime - startTime);
     const t = (localTime / settings.cycleDuration) * Math.PI * 2;
@@ -534,9 +486,7 @@ export function createDissolveEffect(mesh, options = {}) {
     particles.update();
   }
 
-  // Retune a running effect without rebuilding it — this is what lets
-  // Leva controls (or any other live UI) update speed/size/color etc.
-  // every frame instead of only at creation time.
+
   function setParams(partial) {
     if (partial.cycleDuration !== undefined) settings.cycleDuration = partial.cycleDuration;
     if (partial.progressRange !== undefined) settings.progressRange = partial.progressRange;

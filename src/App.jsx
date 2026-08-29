@@ -58,13 +58,14 @@ function CameraController() {
   useEffect(() => {
     if (!controls) return;
 
+    const EPS = 0.0005;
     const eq =
-      camera.position.x === camX &&
-      camera.position.y === camY &&
-      camera.position.z === camZ &&
-      controls.target.x === tarX &&
-      controls.target.y === tarY &&
-      controls.target.z === tarZ;
+      Math.abs(camera.position.x - camX) < EPS &&
+      Math.abs(camera.position.y - camY) < EPS &&
+      Math.abs(camera.position.z - camZ) < EPS &&
+      Math.abs(controls.target.x - tarX) < EPS &&
+      Math.abs(controls.target.y - tarY) < EPS &&
+      Math.abs(controls.target.z - tarZ) < EPS;
 
     if (eq) return;
 
@@ -120,9 +121,6 @@ export default function App() {
   const [isNight, setIsNight] = useState(false);
   const [animReady, setAnimReady] = useState(false);
 
-  // Exactly one showcase target can be selected at a time.
-  // It is selected after hovering the matching mesh and the camera
-  // finishing its move.
   const [selectedShowcaseId, setSelectedShowcaseId] = useState(null);
 
   // Exactly one dissolve effect can run at a time.
@@ -176,8 +174,7 @@ export default function App() {
   }, []);
 
   const handleResetClick = useCallback(() => {
-    // For showcase targets, Back also stops the dissolve and restores
-    // the original mesh material.
+
     setActiveDissolveId(null);
     setSelectedShowcaseId(null);
     setShowBackButton(false);
@@ -262,10 +259,6 @@ export default function App() {
           drawerOpen={drawerOpen}
           animReady={animReady}
         />
-
-        {/* The old global Back button is hidden while a showcase target
-            is selected because ShowcaseControls renders its own Back
-            button at that target's configured position. */}
         {showBackButton && !drawerOpen && !selectedShowcaseId && (
           <BackButton
             onClick={handleResetClick}
@@ -274,7 +267,6 @@ export default function App() {
           />
         )}
 
-        {/* ONLY the selected showcase target gets these three buttons. */}
         <ShowcaseControls
           selectedId={selectedShowcaseId}
           isDissolving={activeDissolveId === selectedShowcaseId}
@@ -283,7 +275,7 @@ export default function App() {
           onBack={handleResetClick}
         />
 
-        <Leva />
+        <Leva hidden />
 
         <Canvas camera={{ position: [DEFAULT_CAMERA.position.x, DEFAULT_CAMERA.position.y, DEFAULT_CAMERA.position.z], fov: 35 }}>
           <Suspense fallback={null}>
@@ -342,12 +334,9 @@ export default function App() {
 
               <Socials />
 
-              {/* Dissolve renderer. It only receives the single active
-                  id, so no other showcase mesh can dissolve. */}
+
               <Showcase activeId={activeDissolveId} />
 
-              {/* Hovering a configured showcase mesh moves the camera to
-                  that mesh's own camera/target pair. */}
               <ShowcaseHoverInteraction
                 onZoomStart={handleShowcaseZoomStart}
                 onTargetSelected={handleShowcaseTargetSelected}

@@ -20,7 +20,7 @@ export function getPokemonVideoTexture() {
   pokemonVideoTexture.magFilter = THREE.LinearFilter;
   pokemonVideoTexture.colorSpace = THREE.SRGBColorSpace;
   pokemonVideoTexture.flipY = false;
-  pokemonVideoTexture.needsUpdate = true;
+
 
   pokemonVideoElement.play().catch(() => {
     // Autoplay may be blocked until user interaction; the texture will start when allowed.
@@ -56,7 +56,7 @@ export function getSpidermanVideoTexture() {
   spidermanVideoTexture.magFilter = THREE.LinearFilter;
   spidermanVideoTexture.colorSpace = THREE.SRGBColorSpace;
   spidermanVideoTexture.flipY = false;
-  spidermanVideoTexture.needsUpdate = true;
+
 
   spidermanVideoElement.play().catch(() => {
     // Autoplay may be blocked until user interaction; the texture will start when allowed.
@@ -92,7 +92,7 @@ export function getOnepieceVideoTexture() {
   onepieceVideoTexture.magFilter = THREE.LinearFilter;
   onepieceVideoTexture.colorSpace = THREE.SRGBColorSpace;
   onepieceVideoTexture.flipY = false;
-  onepieceVideoTexture.needsUpdate = true;
+
 
   onepieceVideoElement.play().catch(() => {
     // Autoplay may be blocked until user interaction; the texture will start when allowed.

@@ -22,7 +22,6 @@ function getTargetForMeshName(meshName) {
   );
 }
 
-
 export function ShowcaseHoverInteraction({
   onTargetSelected,
   onZoomStart,
@@ -136,7 +135,6 @@ export function ShowcaseHoverInteraction({
       setHover("showcaseTargets", true);
     };
 
-    // Camera movement happens ONLY after the user clicks a matching mesh.
     const handleClick = (event) => {
       if (isZoomedIn.current || isAnimating.current) return;
 

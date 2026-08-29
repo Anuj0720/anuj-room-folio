@@ -2,7 +2,7 @@ import { useGLTF } from "@react-three/drei";
 import { useCallback, useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useControls } from "leva"; // Import Leva
+import { useControls } from "leva";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
 import { glassMaterial } from "../../helper/glass";
 import {
@@ -76,6 +76,8 @@ export function Hologram({
       if (child.name === "Hologram_Cube_Glass") {
         child.material = glassMaterial;
         child.material.needsUpdate = true;
+
+        child.renderOrder = 20;
         hologramGlassRef.current = child;
         return;
       }
@@ -101,7 +103,6 @@ export function Hologram({
       }
     });
   }, [scene, controls]);
-  // Note: if `shaderControls` changes a lot, you might want to exclude it from the dependency array above to avoid rebuilding the material constantly, which the separate `useEffect` handles perfectly.
 
   useFrame((state) => {
     if (hologramScreenMatRef.current) {

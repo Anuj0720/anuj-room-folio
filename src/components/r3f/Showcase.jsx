@@ -20,7 +20,6 @@ const NIGHT_OVERLAY_SUFFIX = "_night_overlay";
 export function Showcase({ activeId }) {
   const { scene } = useGLTF("/models/room.glb");
 
-  
   const registryRef = useRef(new Map());
   const liveRef = useRef(new Map());
   const lastParticleCountRef = useRef(null);
@@ -39,7 +38,7 @@ export function Showcase({ activeId }) {
     particleColor,
   } = useControls("Dissolve Effect", {
     timing: folder({
-      cycleDuration: { value: 9, min: 4, max: 40, step: 1, label: "cycle (s)" },
+      cycleDuration: { value: 8, min: 4, max: 40, step: 1, label: "cycle (s)" },
       phaseStep: { value: 1.4, min: 0, max: 6, step: 0.1, label: "stagger (s)" },
     }),
     shape: folder({
@@ -111,11 +110,11 @@ export function Showcase({ activeId }) {
     };
   }, [scene]);
 
-  // ── Start/stop effects to match `activeId`. 
+
   useEffect(() => {
     const registry = registryRef.current;
     const live = liveRef.current;
-
+    
     const wantedIds = activeId ? new Set([activeId]) : new Set();
     const particleCountChanged =
       lastParticleCountRef.current !== null &&
@@ -226,8 +225,7 @@ export function Showcase({ activeId }) {
   useFrame((state) => {
     liveRef.current.forEach(({ effect, nightUniforms }) => {
       effect.update(state.clock.elapsedTime);
-   
-   
+
       if (nightUniforms) {
         nightUniforms.uProgress.value = effect.uniforms.uProgress.value;
       }

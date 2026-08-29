@@ -19,7 +19,7 @@ function ActionButton({ position, onClick, disabled, children, label, className 
       aria-label={label}
       title={label}
       style={PositionStyle(position)}
-      className={`fixed z-[100] cursor-pointer flex h-10 w-10 items-center justify-center rounded-full shadow-lg shadow-black/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      className={`fixed z-100 cursor-pointer flex h-10 w-10 items-center justify-center rounded-full shadow-lg shadow-black/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
