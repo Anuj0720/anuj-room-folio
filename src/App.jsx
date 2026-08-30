@@ -12,6 +12,7 @@ import BackButton from "./components/ui/BackButton";
 import Drawer from "./components/ui/Drawer";
 import { Hologram } from "./components/r3f/Hologram";
 import { Socials } from "./components/r3f/Socials";
+import { InteractiveHoverMeshes } from "./components/r3f/InteractiveHoverMeshes";
 import { info } from "./helper/data";
 import Loading from "./components/ui/Loading";
 import LoadingReveal from "./components/ui/LoadingReveal";
@@ -341,6 +342,7 @@ export default function App() {
 
               <Socials />
 
+              <InteractiveHoverMeshes />
 
               <Showcase activeId={activeDissolveId} />
 
