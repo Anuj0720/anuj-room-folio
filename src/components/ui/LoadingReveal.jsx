@@ -8,7 +8,7 @@ export default function LoadingReveal({ onComplete }) {
 
   const { duration, color } = useControls("Loading Reveal", {
     duration: { value: 3600, min: 500, max: 8000, step: 100, label: "duration (ms)" },
-    color: { value: "#0e0e0e" },
+    color: { value: "#f47b50" },
   });
 
   useEffect(() => {
@@ -23,9 +23,7 @@ export default function LoadingReveal({ onComplete }) {
       reveal.domElement.remove();
       revealRef.current = null;
     };
-    // Only built once on mount — duration/color changes are pushed into
-    // the already-running instance below instead of rebuilding it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => {

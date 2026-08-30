@@ -30,14 +30,13 @@ const fragmentShader = /* glsl */ `
     float r = length(uvs * 0.92);
     float theta = atan(uvs.y, uvs.x);
 
-
     float spiral = fract(uArms * theta / PI + uTightness * pow(r, 0.4) - 4.5 * uProgression);
 
     // Stage 1 — the spiral bands fade in starting at 25% 
     float spiralThreshold = smoothstep(0.25, 1.0, uProgression);
     float alphaSpiral = step(spiralThreshold, spiral);
 
-    // Stage 2 — a plain growing circle (25% -> 80%) s
+    // Stage 2 — a plain growing circle (25% -> 80%)
     float circleThreshold = smoothstep(0.25, 0.8, uProgression);
     float alphaCircle = step(circleThreshold, r);
     float alpha = max(alphaSpiral, alphaCircle);
@@ -49,12 +48,15 @@ const fragmentShader = /* glsl */ `
 
     if (alpha < 0.02) discard; 
     gl_FragColor = vec4(uColor, alpha);
+    
+    // Convert Linear color to sRGB so WebGL matches standard CSS hex colors
+    #include <colorspace_fragment>
   }
 `;
 
 export function createSpiralRevealMaterial(options = {}) {
   const {
-    color = "#0e0e0e",
+    color = "#ffc9c9",
     arms = 2.5,
     tightness = 7.0,
   } = options;

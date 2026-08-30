@@ -26,10 +26,6 @@ export default function Loading({ onComplete }) {
   useEffect(() => {
     if (progress >= 100) {
       setPhase("done");
-      // A brief hold on "Ready", then hand off immediately — no fade-out
-      // of our own here. The spiral reveal (already opaque and covering
-      // the screen from its very first frame) takes over the transition
-      // visual, so there's no gap where nothing opaque is on screen.
       const timer = setTimeout(() => onComplete?.(), 400);
       return () => clearTimeout(timer);
     }
@@ -52,24 +48,9 @@ export default function Loading({ onComplete }) {
 
   return (
     <div
-      className={`
-        fixed inset-0 z-50 flex flex-col items-center justify-center
-        bg-[#0e0e0e]
-      `}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{ backgroundColor: "#f47b50" }}
     >
-      {/* Ambient glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px] opacity-20 transition-all duration-1000"
-          style={{
-            width: "420px",
-            height: "420px",
-            background: `conic-gradient(from 0deg, #6366f1, #a78bfa, #38bdf8, #6366f1)`,
-            opacity: 0.12 + (progress / 100) * 0.18,
-          }}
-        />
-      </div>
-
       {/* Loader ring */}
       <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
         {/* Outer rotating ring */}
@@ -77,7 +58,7 @@ export default function Loading({ onComplete }) {
           className="absolute inset-0 rounded-full"
           style={{
             background:
-              "conic-gradient(from 0deg, transparent 70%, rgba(99,102,241,0.15) 100%)",
+              "conic-gradient(from 0deg, transparent 70%, rgba(255,255,255,0.35) 100%)",
             animation: "spin 3s linear infinite",
           }}
         />
@@ -87,7 +68,7 @@ export default function Loading({ onComplete }) {
           height={size}
           viewBox={`0 0 ${size} ${size}`}
           className="absolute inset-0 -rotate-90"
-          style={{ filter: "drop-shadow(0 0 8px rgba(99,102,241,0.5))" }}
+          style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.4))" }}
         >
           {/* Track */}
           <circle
@@ -95,7 +76,7 @@ export default function Loading({ onComplete }) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="rgba(255,255,255,0.05)"
+            stroke="rgba(255,255,255,0.15)"
             strokeWidth={strokeWidth}
           />
           {/* Progress arc */}
@@ -113,8 +94,8 @@ export default function Loading({ onComplete }) {
           />
           <defs>
             <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#818cf8" />
-              <stop offset="100%" stopColor="#38bdf8" />
+              <stop offset="0%" stopColor="#fed7aa" /> {/* Warm light orange */}
+              <stop offset="100%" stopColor="#ffffff" /> {/* Pure white */}
             </linearGradient>
           </defs>
         </svg>
@@ -124,13 +105,13 @@ export default function Loading({ onComplete }) {
           <span
             className="font-mono text-3xl font-light tracking-tighter"
             style={{
-              color: phase === "done" ? "#a5f3fc" : "#e2e8f0",
+              color: phase === "done" ? "#ffffff" : "#ffedd5",
               transition: "color 0.4s ease",
               fontVariantNumeric: "tabular-nums",
             }}
           >
             {Math.floor(progress)}
-            <span className="text-lg text-slate-500">%</span>
+            <span className="text-lg opacity-70">%</span>
           </span>
         </div>
       </div>
@@ -139,7 +120,7 @@ export default function Loading({ onComplete }) {
       <div className="mt-8 flex flex-col items-center gap-2">
         <p
           className="text-xs tracking-[0.25em] uppercase font-medium transition-all duration-300"
-          style={{ color: "#64748b", letterSpacing: "0.2em" }}
+          style={{ color: "#ffedd5", opacity: 0.9, letterSpacing: "0.2em" }}
         >
           {getStatusText()}
         </p>
@@ -153,8 +134,8 @@ export default function Loading({ onComplete }) {
               style={{
                 background:
                   progress >= step
-                    ? "linear-gradient(90deg,#6366f1,#38bdf8)"
-                    : "rgba(255,255,255,0.08)",
+                    ? "linear-gradient(90deg, #fed7aa, #ffffff)"
+                    : "rgba(255,255,255,0.2)",
                 transform: progress >= step ? "scaleX(1)" : "scaleX(0.6)",
               }}
             />
@@ -163,12 +144,12 @@ export default function Loading({ onComplete }) {
       </div>
 
       {/* Wordmark / brand */}
-      <div className="absolute bottom-10 flex items-center gap-2 opacity-30">
-        <div className="w-1 h-1 rounded-full bg-indigo-400" />
-        <span className="text-[10px] tracking-[0.3em] uppercase text-slate-500 font-light">
+      <div className="absolute bottom-10 flex items-center gap-2 opacity-60">
+        <div className="w-1 h-1 rounded-full bg-orange-200" />
+        <span className="text-[10px] tracking-[0.3em] uppercase text-orange-50 font-light">
           Loading environment
         </span>
-        <div className="w-1 h-1 rounded-full bg-sky-400" />
+        <div className="w-1 h-1 rounded-full bg-white" />
       </div>
 
       <style>{`
