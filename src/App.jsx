@@ -14,6 +14,7 @@ import { Hologram } from "./components/r3f/Hologram";
 import { Socials } from "./components/r3f/Socials";
 import { info } from "./helper/data";
 import Loading from "./components/ui/Loading";
+import LoadingReveal from "./components/ui/LoadingReveal";
 import { DayNightToggler } from "./components/ui/DayNightToggler";
 import { Showcase } from "./components/r3f/Showcase";
 import ShowcaseControls from "./components/ui/ShowcaseControls";
@@ -112,6 +113,9 @@ function CameraController() {
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
+  // Flips true only once the post-load spiral reveal has fully
+  // resolved — this, not `loaded`, is what's allowed to start Animation.
+  const [revealed, setRevealed] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const [backButtonTop, setBackButtonTop] = useState(48);
@@ -141,11 +145,11 @@ export default function App() {
   }, [markAnimReady]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!revealed) return;
 
     const id = setTimeout(() => markAnimReady(), 4000);
     return () => clearTimeout(id);
-  }, [loaded, markAnimReady]);
+  }, [revealed, markAnimReady]);
 
   const imacResetRef = useRef(null);
   const macResetRef = useRef(null);
@@ -244,6 +248,9 @@ export default function App() {
   return (
     <>
       {!loaded && <Loading onComplete={() => setLoaded(true)} />}
+      {loaded && !revealed && (
+        <LoadingReveal onComplete={() => setRevealed(true)} />
+      )}
 
       <div
         style={{
@@ -287,7 +294,7 @@ export default function App() {
               <Room isNight={isNight} />
 
               <Animation
-                loaded={loaded}
+                loaded={revealed}
                 onImacScreenAnimComplete={handleImacScreenAnimComplete}
                 onTvScreenAnimComplete={handleTvScreenAnimComplete}
                 onMacScreenAnimComplete={handleMacScreenAnimComplete}

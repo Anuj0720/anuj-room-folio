@@ -53,6 +53,62 @@ export default function Animation({
     return () => { mounted = false; };
   }, [scene]);
 
+  // Immediately scale every animated mesh to zero as soon as it exists
+  // in the scene, regardless of loaded state — same idea as hiding the
+  // screens above, so nothing sits fully visible in its resting pose
+  // while the loading screen / spiral reveal are still showing. The
+  // actual grow-in timeline below only starts once `loaded` is true.
+  useEffect(() => {
+    let mounted = true;
+
+    const animatedMeshSubstrings = [
+      "animate1",
+      "animate1_box1",
+      "animate1_box2",
+      "animate1_box3",
+      "animate2_1",
+      "animate2_2",
+      "animate2_3",
+      "animate2_4",
+      "animate2_imac1",
+      "animate2_imac2",
+      "animate2_tv1",
+      "animate2_tv2",
+      "animate2_mac1",
+      "animate2_mac2",
+      "animate2_pot1",
+      "animate2_flower1",
+      "animate2_flower2",
+      "animate2_flower3",
+      ...Array.from({ length: 10 }, (_, i) => `animate3_${i + 1}`),
+    ];
+
+    const hideAnimatedMeshes = () => {
+      const targets = [];
+      scene.traverse((child) => {
+        if (!child.isMesh) return;
+        const name = (child.name || "").toLowerCase();
+        if (animatedMeshSubstrings.some((s) => name.includes(s))) targets.push(child);
+      });
+      if (targets.length === 0) return false;
+      targets.forEach((m) => m.scale.set(0, 0, 0));
+      return true;
+    };
+
+    if (!hideAnimatedMeshes()) {
+      const interval = setInterval(() => {
+        if (!mounted) return;
+        if (hideAnimatedMeshes()) clearInterval(interval);
+      }, 50);
+      return () => {
+        mounted = false;
+        clearInterval(interval);
+      };
+    }
+
+    return () => { mounted = false; };
+  }, [scene]);
+
   useEffect(() => {
     if (!loaded) return;
 

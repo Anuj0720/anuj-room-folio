@@ -18,11 +18,12 @@ const NIGHT_OVERLAY_SUFFIX = "_night_overlay";
 const HOVER_SCALE = 1.1;
 const SCALE_DURATION = 0.3;
 
+const REST_SCALE = new THREE.Vector3(1, 1, 1);
+
 export function Socials() {
   const { scene } = useGLTF("/models/room.glb");
   const { camera, controls, gl } = useThree();
 
-  // Each entry: { mesh, nightMesh (or null), social, baseScale, nightBaseScale }
   const socialMeshesRef = useRef([]);
   const hoveredEntryRef = useRef(null);
 
@@ -47,8 +48,8 @@ export function Socials() {
         mesh: child,
         nightMesh,
         social,
-        baseScale: child.scale.clone(),
-        nightBaseScale: nightMesh ? nightMesh.scale.clone() : null,
+        baseScale: REST_SCALE,
+        nightBaseScale: nightMesh ? REST_SCALE : null,
       });
     });
 

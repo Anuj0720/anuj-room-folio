@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 
 export default function Loading({ onComplete }) {
   const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState("loading"); // "loading" | "done" | "exit"
+  const [phase, setPhase] = useState("loading"); // "loading" | "done"
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -26,10 +26,11 @@ export default function Loading({ onComplete }) {
   useEffect(() => {
     if (progress >= 100) {
       setPhase("done");
-      const timer = setTimeout(() => {
-        setPhase("exit");
-        setTimeout(() => onComplete?.(), 700);
-      }, 600);
+      // A brief hold on "Ready", then hand off immediately — no fade-out
+      // of our own here. The spiral reveal (already opaque and covering
+      // the screen from its very first frame) takes over the transition
+      // visual, so there's no gap where nothing opaque is on screen.
+      const timer = setTimeout(() => onComplete?.(), 400);
       return () => clearTimeout(timer);
     }
   }, [progress, onComplete]);
@@ -54,8 +55,6 @@ export default function Loading({ onComplete }) {
       className={`
         fixed inset-0 z-50 flex flex-col items-center justify-center
         bg-[#0e0e0e]
-        transition-opacity duration-700 ease-in-out
-        ${phase === "exit" ? "opacity-0 pointer-events-none" : "opacity-100"}
       `}
     >
       {/* Ambient glow */}
