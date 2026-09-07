@@ -21,8 +21,16 @@ import { Showcase } from "./components/r3f/Showcase";
 import ShowcaseControls from "./components/ui/ShowcaseControls";
 import { ShowcaseHoverInteraction } from "./components/r3f/ShowcaseHoverInteraction";
 import { DEFAULT_CAMERA } from "./helper/cameraMover";
+import { getCurrentBreakpoint } from "./helper/breakpoints";
+import {
+  IMAC_BACK_BUTTON,
+  MAC_BACK_BUTTON,
+  POSTER_BACK_BUTTON,
+  TV_BACK_BUTTON,
+  HOLOGRAM_BACK_BUTTON,
+} from "./helper/cameraPositions";
 
-function CameraController() {
+function CameraController({ isZoomed }) {
   const { camera, controls } = useThree();
 
   const [{ camX, camY, camZ, tarX, tarY, tarZ }, set] = useControls(
@@ -109,6 +117,50 @@ function CameraController() {
     return () => controls.removeEventListener("change", onUpdate);
   }, [controls, camera, set]);
 
+  // ── Snap to the new breakpoint's default camera on resize ──
+  // getCurrentBreakpoint()/DEFAULT_CAMERA only ever get re-read when
+  // something explicitly calls them again (a zoom-in click, a reset).
+  // Nothing was listening for the window crossing a breakpoint
+  // boundary, so resizing across e.g. desktop -> portrait_tablet left
+  // the camera sitting at whatever position it was created with.
+  const breakpointRef = useRef(getCurrentBreakpoint());
+
+  useEffect(() => {
+    if (!controls) return;
+
+    const handleResize = () => {
+      const next = getCurrentBreakpoint();
+      if (next === breakpointRef.current) return;
+      breakpointRef.current = next;
+
+      // A zoomed-in shot (mac/poster/tv/etc.) reads its own
+      // per-breakpoint position fresh the next time it's entered or
+      // reset, so forcing the idle default here while zoomed in
+      // would just fight whatever view is currently active.
+      if (isZoomed) return;
+
+      const pos = DEFAULT_CAMERA.position;
+      const tar = DEFAULT_CAMERA.target;
+
+      camera.position.set(pos.x, pos.y, pos.z);
+      controls.target.set(tar.x, tar.y, tar.z);
+      controls.update();
+
+      // Keep the Leva panel's sliders in sync with the snap.
+      set({
+        camX: pos.x,
+        camY: pos.y,
+        camZ: pos.z,
+        tarX: tar.x,
+        tarY: tar.y,
+        tarZ: tar.z,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [camera, controls, isZoomed, set]);
+
   return null;
 }
 
@@ -163,10 +215,13 @@ export default function App() {
   const macScreenAnimCompleteRef = useRef(null);
   const tvScreenAnimCompleteRef = useRef(null);
 
-  const handleZoomIn = useCallback((top = 48, left = "50%") => {
+  // Takes one of the *_BACK_BUTTON configs from cameraPositions.js —
+  // each is a getter that already resolves to the right value for the
+  // current breakpoint, so this just needs to read .top/.left.
+  const handleZoomIn = useCallback((backButton) => {
     setOrbitEnabled(false);
-    setBackButtonTop(top);
-    setBackButtonLeft(left);
+    setBackButtonTop(backButton.top);
+    setBackButtonLeft(backButton.left);
   }, []);
 
   const handleZoomComplete = useCallback(() => {
@@ -283,9 +338,23 @@ export default function App() {
           onBack={handleResetClick}
         />
 
-        <Leva hidden />
+        <Leva hidden  />
 
-        <Canvas camera={{ position: [DEFAULT_CAMERA.position.x, DEFAULT_CAMERA.position.y, DEFAULT_CAMERA.position.z], fov: 35 }}>
+        <Canvas
+          camera={{
+            position: [DEFAULT_CAMERA.position.x, DEFAULT_CAMERA.position.y, DEFAULT_CAMERA.position.z],
+            fov: 35,
+            // Scene is ~40 units across, but the default near/far
+            // (0.1 / 2000) spreads the depth buffer's precision over
+            // a range 50x too large. That's what let the wall (offset
+            // toward camera in Room.jsx) start winning the depth test
+            // against coincident meshes like the posters once you
+            // zoomed out. Tightening this restores enough precision
+            // at real-world orbit distances.
+            near: 1,
+            far: 1000,
+          }}
+        >
           <Suspense fallback={null}>
             <Stage
               environment="apartment"
@@ -302,7 +371,7 @@ export default function App() {
               />
 
               <Imac
-                onZoomIn={() => handleZoomIn(48)}
+                onZoomIn={() => handleZoomIn(IMAC_BACK_BUTTON)}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={imacResetRef}
                 onResetComplete={handleResetComplete}
@@ -310,7 +379,7 @@ export default function App() {
               />
 
               <Mac
-                onZoomIn={() => handleZoomIn(16)}
+                onZoomIn={() => handleZoomIn(MAC_BACK_BUTTON)}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={macResetRef}
                 onResetComplete={handleResetComplete}
@@ -318,7 +387,7 @@ export default function App() {
               />
 
               <Poster
-                onZoomIn={() => handleZoomIn(28)}
+                onZoomIn={() => handleZoomIn(POSTER_BACK_BUTTON)}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={posterResetRef}
                 onResetComplete={handleResetComplete}
@@ -326,7 +395,7 @@ export default function App() {
               />
 
               <Tv
-                onZoomIn={() => handleZoomIn(0, "39%")}
+                onZoomIn={() => handleZoomIn(TV_BACK_BUTTON)}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={tvResetRef}
                 onResetComplete={handleResetComplete}
@@ -334,7 +403,7 @@ export default function App() {
               />
 
               <Hologram
-                onZoomIn={() => handleZoomIn(58, "44%")}
+                onZoomIn={() => handleZoomIn(HOLOGRAM_BACK_BUTTON)}
                 onZoomComplete={handleZoomComplete}
                 resetCameraRef={hologramResetRef}
                 onResetComplete={handleResetComplete}
@@ -360,7 +429,7 @@ export default function App() {
               target={[DEFAULT_CAMERA.target.x, DEFAULT_CAMERA.target.y, DEFAULT_CAMERA.target.z]}
             />
 
-            <CameraController />
+            <CameraController isZoomed={!orbitEnabled} />
           </Suspense>
         </Canvas>
 

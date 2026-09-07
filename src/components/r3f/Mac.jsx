@@ -3,6 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
+import { MAC_ZOOM } from "../../helper/cameraPositions";
 import {
   getOnepieceVideoTexture,
   getOnepieceVideoElement,
@@ -172,8 +173,8 @@ export function Mac({
       moveCamera({
         camera,
         controls,
-        position: { x: -12, y: -30, z: -10.55 },
-        target: { x: -30.3, y: -34.2, z: -19.9 },
+        position: MAC_ZOOM.position,
+        target: MAC_ZOOM.target,
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();

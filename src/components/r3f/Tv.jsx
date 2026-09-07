@@ -3,6 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
+import { TV_ZOOM } from "../../helper/cameraPositions";
 import {
   getSpidermanVideoTexture,
   getSpidermanVideoElement,
@@ -143,8 +144,8 @@ export function Tv({
       moveCamera({
         camera,
         controls,
-        position: { x: -9.96, y: -32.36, z: -6.75 },
-        target: { x: -9.96, y: -32.39, z: -7.96 },
+        position: TV_ZOOM.position,
+        target: TV_ZOOM.target,
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();

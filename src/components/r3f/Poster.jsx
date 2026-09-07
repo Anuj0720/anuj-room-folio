@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
+import { POSTER_ZOOM } from "../../helper/cameraPositions";
 import { posterGlassMaterial } from "../../helper/glass";
 import { registerCursorTarget, setHover, clearHover } from "../../helper/cursorManager";
 
@@ -66,6 +67,18 @@ export function Poster({
         toneMapped: false,
         side: THREE.FrontSide,
         needsUpdate: true,
+        // The poster plane sits almost coincident with the wall mesh
+        // behind it. Room.jsx pushes the wall material forward with a
+        // negative polygonOffset (for its own day/night overlay
+        // z-fighting fix), so without an offset here too, the wall
+        // wins the depth test once camera distance grows and depth
+        // precision drops — that's why the photo disappears while the
+        // (separately-modeled, non-coincident) frame stays visible.
+        // Push the poster further toward the camera than the wall so
+        // it always wins, at any distance.
+        polygonOffset: true,
+        polygonOffsetFactor: -8,
+        polygonOffsetUnits: -8,
       });
 
       posterMeshes.push(child);
@@ -152,8 +165,8 @@ export function Poster({
         moveCamera({
           camera,
           controls,
-          position: { x: -11, y: -29, z: -7 },
-          target: { x: -11, y: -29, z: -9 },
+          position: POSTER_ZOOM.position,
+          target: POSTER_ZOOM.target,
           onComplete: () => {
             isAnimating.current = false;
             onZoomComplete?.();

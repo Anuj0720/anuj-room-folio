@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
+import { IMAC_ZOOM } from "../../helper/cameraPositions";
 
 const toRad = THREE.MathUtils.degToRad;
 
@@ -46,8 +47,8 @@ export function Imac({
     moveCamera({
       camera,
       controls,
-      position: { x: -11, y: -28, z: -10 },
-      target: { x: -26, y: -32, z: -9 },
+      position: IMAC_ZOOM.position,
+      target: IMAC_ZOOM.target,
       onComplete: () => {
         isAnimating.current = false;
         setShowIframe(true);

@@ -5,6 +5,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useControls } from "leva";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
+import { HOLOGRAM_ZOOM } from "../../helper/cameraPositions";
 import { glassMaterial } from "../../helper/glass";
 import {
   getPokemonVideoTexture,
@@ -320,8 +321,8 @@ export function Hologram({
       moveCamera({
         camera,
         controls,
-        position: { x: -12, y: -31, z: -5 },
-        target: { x: -25, y: -32, z: -6 },
+        position: HOLOGRAM_ZOOM.position,
+        target: HOLOGRAM_ZOOM.target,
         onComplete: () => {
           isAnimating.current = false;
           onZoomComplete?.();
