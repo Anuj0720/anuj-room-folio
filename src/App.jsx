@@ -16,7 +16,7 @@ import { InteractiveHoverMeshes } from "./components/r3f/InteractiveHoverMeshes"
 import { info } from "./helper/data";
 import Loading from "./components/ui/Loading";
 import LoadingReveal from "./components/ui/LoadingReveal";
-import { DayNightToggler } from "./components/ui/DayNightToggler";
+import { DaynightToggler } from "./components/ui/DaynightToggler";
 import { Showcase } from "./components/r3f/Showcase";
 import ShowcaseControls from "./components/ui/ShowcaseControls";
 import { ShowcaseHoverInteraction } from "./components/r3f/ShowcaseHoverInteraction";
@@ -316,7 +316,7 @@ export default function App() {
           visibility: loaded ? "visible" : "hidden",
         }}
       >
-        <DayNightToggler
+        <DaynightToggler
           isNight={isNight}
           onToggle={setIsNight}
           drawerOpen={drawerOpen}
