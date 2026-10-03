@@ -455,6 +455,7 @@ function Portfolio() {
             <OrbitControls
               makeDefault
               enabled={orbitEnabled}
+              enablePan={false}
               // Limits only apply to the idle room view; close-up zoom
               // shots are outside them, so they're lifted while zoomed.
               {...(orbitEnabled ? ORBIT_LIMITS : ORBIT_UNLIMITED)}
