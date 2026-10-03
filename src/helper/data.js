@@ -3,6 +3,11 @@ export const info = {
     {
       id: 1,
       name: "Cristiano Ronaldo",
+      // Age is computed from dob, and stats are refreshed live
+      // (see helper/liveStats.js). The values below are the fallback
+      // used when offline / the source is unreachable.
+      dob: "1985-02-05",
+      liveSource: "ronaldo",
       age: 41,
       image: "/players/cristiano-ronaldo.jpeg",
       teams: [

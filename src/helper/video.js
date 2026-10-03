@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { registerExternalAudio } from "./audio";
 
 let pokemonVideoTexture;
 let pokemonVideoElement;
@@ -14,6 +15,8 @@ export function getPokemonVideoTexture() {
   pokemonVideoElement.playsInline = true;
   pokemonVideoElement.crossOrigin = "anonymous";
   pokemonVideoElement.preload = "auto";
+  // Lets the background music duck while this video is audible.
+  registerExternalAudio(pokemonVideoElement);
 
   pokemonVideoTexture = new THREE.VideoTexture(pokemonVideoElement);
   pokemonVideoTexture.minFilter = THREE.LinearFilter;
@@ -50,6 +53,8 @@ export function getSpidermanVideoTexture() {
   spidermanVideoElement.playsInline = true;
   spidermanVideoElement.crossOrigin = "anonymous";
   spidermanVideoElement.preload = "auto";
+  // Lets the background music duck while this video is audible.
+  registerExternalAudio(spidermanVideoElement);
 
   spidermanVideoTexture = new THREE.VideoTexture(spidermanVideoElement);
   spidermanVideoTexture.minFilter = THREE.LinearFilter;
@@ -86,6 +91,8 @@ export function getOnepieceVideoTexture() {
   onepieceVideoElement.playsInline = true;
   onepieceVideoElement.crossOrigin = "anonymous";
   onepieceVideoElement.preload = "auto";
+  // Lets the background music duck while this video is audible.
+  registerExternalAudio(onepieceVideoElement);
 
   onepieceVideoTexture = new THREE.VideoTexture(onepieceVideoElement);
   onepieceVideoTexture.minFilter = THREE.LinearFilter;

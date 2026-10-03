@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { DEFAULT_CAMERA, moveCamera } from "../../helper/cameraMover";
 import { IMAC_ZOOM } from "../../helper/cameraPositions";
+import { holdBackgroundMusic, releaseBackgroundMusic } from "../../helper/audio";
 
 const toRad = THREE.MathUtils.degToRad;
 
@@ -42,6 +43,8 @@ export function Imac({
     if (isAnimating.current) return;
     isAnimating.current = true;
     setShowOverlay(false);
+    // Pause the background music while the iMac is open.
+    holdBackgroundMusic("imac");
     onZoomIn?.();
 
     moveCamera({
@@ -62,6 +65,8 @@ export function Imac({
     if (isAnimating.current) return;
     isAnimating.current = true;
     setShowOverlay(false);
+    // Leaving the iMac -> background music fades back in.
+    releaseBackgroundMusic("imac");
 
     moveCamera({
       camera,

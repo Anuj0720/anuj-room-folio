@@ -21,7 +21,12 @@ import { Showcase } from "./components/r3f/Showcase";
 import ShowcaseControls from "./components/ui/ShowcaseControls";
 import { ShowcaseHoverInteraction } from "./components/r3f/ShowcaseHoverInteraction";
 import { DEFAULT_CAMERA } from "./helper/cameraMover";
-import { getCurrentBreakpoint } from "./helper/breakpoints";
+import { getCurrentBreakpoint, isSupportedScreen } from "./helper/breakpoints";
+import { ORBIT_LIMITS, ORBIT_UNLIMITED } from "./helper/orbitLimits";
+import UnsupportedScreen from "./components/ui/UnsupportedScreen";
+import { MusicToggler } from "./components/ui/MusicToggler";
+import { startBackgroundMusic, stopBackgroundMusic } from "./helper/audio";
+import { loadRonaldoLiveStats } from "./helper/liveStats";
 import {
   IMAC_BACK_BUTTON,
   MAC_BACK_BUTTON,
@@ -121,7 +126,7 @@ function CameraController({ isZoomed }) {
   // getCurrentBreakpoint()/DEFAULT_CAMERA only ever get re-read when
   // something explicitly calls them again (a zoom-in click, a reset).
   // Nothing was listening for the window crossing a breakpoint
-  // boundary, so resizing across e.g. desktop -> portrait_tablet left
+  // boundary, so resizing across desktop <-> landscape_tablet left
   // the camera sitting at whatever position it was created with.
   const breakpointRef = useRef(getCurrentBreakpoint());
 
@@ -164,7 +169,7 @@ function CameraController({ isZoomed }) {
   return null;
 }
 
-export default function App() {
+function Portfolio() {
   const [loaded, setLoaded] = useState(false);
   // Flips true only once the post-load spiral reveal has fully
   // resolved — this, not `loaded`, is what's allowed to start Animation.
@@ -179,6 +184,16 @@ export default function App() {
   const [animReady, setAnimReady] = useState(false);
 
   const [selectedShowcaseId, setSelectedShowcaseId] = useState(null);
+
+  // Stop the background track if the portfolio unmounts (window
+  // shrunk below the supported size).
+  useEffect(() => () => stopBackgroundMusic(), []);
+
+  // Fetch Ronaldo's live stats in the background so they're ready
+  // by the time the poster drawer is opened.
+  useEffect(() => {
+    loadRonaldoLiveStats();
+  }, []);
 
   // Exactly one dissolve effect can run at a time.
   const [activeDissolveId, setActiveDissolveId] = useState(null);
@@ -303,7 +318,16 @@ export default function App() {
 
   return (
     <>
-      {!loaded && <Loading onComplete={() => setLoaded(true)} />}
+      {/* The intro reveal only starts after the visitor picks "with" or
+          "without" audio on the loading screen. */}
+      {!loaded && (
+        <Loading
+          onEnter={(withAudio) => {
+            startBackgroundMusic(withAudio);
+            setLoaded(true);
+          }}
+        />
+      )}
       {loaded && !revealed && (
         <LoadingReveal onComplete={() => setRevealed(true)} />
       )}
@@ -319,6 +343,11 @@ export default function App() {
         <DayNightToggler
           isNight={isNight}
           onToggle={setIsNight}
+          drawerOpen={drawerOpen}
+          animReady={animReady}
+        />
+        <MusicToggler
+          isNight={isNight}
           drawerOpen={drawerOpen}
           animReady={animReady}
         />
@@ -426,6 +455,9 @@ export default function App() {
             <OrbitControls
               makeDefault
               enabled={orbitEnabled}
+              // Limits only apply to the idle room view; close-up zoom
+              // shots are outside them, so they're lifted while zoomed.
+              {...(orbitEnabled ? ORBIT_LIMITS : ORBIT_UNLIMITED)}
               target={[DEFAULT_CAMERA.target.x, DEFAULT_CAMERA.target.y, DEFAULT_CAMERA.target.z]}
             />
 
@@ -442,4 +474,23 @@ export default function App() {
       </div>
     </>
   );
+}
+
+// Below landscape_tablet nothing is mounted at all — no loader, no
+// Canvas, no assets — just the "desktop and tablet only" message.
+// Resizing back up mounts the portfolio fresh (intro included).
+export default function App() {
+  const [supported, setSupported] = useState(isSupportedScreen);
+
+  useEffect(() => {
+    const onResize = () => setSupported(isSupportedScreen());
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, []);
+
+  return supported ? <Portfolio /> : <UnsupportedScreen />;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLivePlayer, loadRonaldoLiveStats } from "../../helper/liveStats";
 
 function formatStatKey(key) {
   return key
@@ -27,6 +28,28 @@ function getMeta(key) {
 }
 
 const TABS = ["Stats", "Career", "Teams"];
+
+// Tiny pulsing dot shown next to values that are fetched live.
+function LiveDot({ title = "Live" }) {
+  return (
+    <span
+      title={title}
+      aria-label={title}
+      className="live-dot"
+      style={{
+        display: "inline-block",
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: "#34d399",
+        marginLeft: 8,
+        verticalAlign: "middle",
+        boxShadow: "0 0 0 0 rgba(52,211,153,0.6)",
+        animation: "livePulse 1.8s ease-out infinite",
+      }}
+    />
+  );
+}
 
 // ─── NIGHT theme (unchanged) ─────────────────────────────────────────────────
 const NIGHT = {
@@ -99,11 +122,21 @@ function getTheme(isNight) { return isNight ? NIGHT : DAY; }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function Drawer({ open, player, onClose, isNight = false }) {
+export default function Drawer({ open, player: basePlayer, onClose, isNight = false }) {
   const [activeTab, setActiveTab] = useState("Stats");
+  // Live values for flagged players (Ronaldo only); others pass through.
+  const { player, liveKeys, status: liveStatus, updatedAt } = useLivePlayer(basePlayer);
   const t = getTheme(isNight);
 
   useEffect(() => { setActiveTab("Stats"); }, [player?.name]);
+
+  // Re-check for fresh stats whenever a live player's drawer opens
+  // (no-op if the cached copy is still fresh).
+  useEffect(() => {
+    if (open && basePlayer?.liveSource) loadRonaldoLiveStats();
+  }, [open, basePlayer?.liveSource]);
+
+  const isLive = (key) => liveKeys.includes(key);
 
   const statEntries = player ? Object.entries(player.stats) : [];
   const gridStats   = statEntries.slice(0, 4);
@@ -150,6 +183,14 @@ export default function Drawer({ open, player, onClose, isNight = false }) {
 
   return (
     <>
+      <style>{`
+        @keyframes livePulse {
+          0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); }
+          70%  { box-shadow: 0 0 0 7px rgba(52,211,153,0); }
+          100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+        }
+      `}</style>
+
       {/* ── Backdrop ── */}
       <div
         onClick={onClose}
@@ -291,9 +332,9 @@ export default function Drawer({ open, player, onClose, isNight = false }) {
               {activeTab === "Stats" && (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    {[{ label: "Age", value: player.age }, { label: "Trophies", value: player.stats.trophies ?? "—" }].map(({ label: l, value }) => (
+                    {[{ label: "Age", value: player.age, live: Boolean(player.dob) }, { label: "Trophies", value: player.stats.trophies ?? "—", live: isLive("trophies") }].map(({ label: l, value, live }) => (
                       <div key={l} style={card}>
-                        <p style={lbl}>{l}</p>
+                        <p style={lbl}>{l}{live && <LiveDot />}</p>
                         <p style={bigNum}>{value}</p>
                       </div>
                     ))}
@@ -308,7 +349,7 @@ export default function Drawer({ open, player, onClose, isNight = false }) {
                         <div key={key} style={card}>
                           <img src={icon} alt={formatStatKey(key)} style={{ width: 28, height: 28, marginBottom: 14, objectFit: "contain", filter: t.iconFilter, transition: "filter 0.4s ease" }} />
                           <p style={{ ...bigNum, fontSize: 38 }}>{value}</p>
-                          <p style={{ ...lbl, marginTop: 8 }}>{formatStatKey(key)}</p>
+                          <p style={{ ...lbl, marginTop: 8 }}>{formatStatKey(key)}{isLive(key) && <LiveDot />}</p>
                         </div>
                       );
                     })}
@@ -325,7 +366,7 @@ export default function Drawer({ open, player, onClose, isNight = false }) {
                                 <img src={icon} alt={formatStatKey(key)} style={{ width: 22, height: 22, objectFit: "contain", filter: t.iconFilter, transition: "filter 0.4s ease" }} />
                               </div>
                               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.textMuted, transition: "color 0.4s ease" }}>
-                                {formatStatKey(key)}
+                                {formatStatKey(key)}{isLive(key) && <LiveDot />}
                               </p>
                             </div>
                             <p style={{ fontSize: 30, fontWeight: 700, color: t.text, transition: "color 0.4s ease" }}>{value}</p>
@@ -333,6 +374,23 @@ export default function Drawer({ open, player, onClose, isNight = false }) {
                         );
                       })}
                     </div>
+                  )}
+
+                  {basePlayer?.liveSource && (
+                    <p style={{ fontSize: 11, lineHeight: 1.6, color: t.textFaint, transition: "color 0.4s ease" }}>
+                      {liveKeys.length > 0 ? (
+                        <>
+                          <LiveDot title="Live" />
+                          Updated live from Wikipedia
+                          {updatedAt ? ` · ${new Date(updatedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` : ""}.
+                          {" "}Assists are not live.
+                        </>
+                      ) : liveStatus === "fallback" ? (
+                        "Couldn’t reach the live source — showing saved stats."
+                      ) : (
+                        "Checking for the latest stats…"
+                      )}
+                    </p>
                   )}
                 </>
               )}

@@ -3,11 +3,9 @@ import { useControls } from "leva";
 import { createLoadingReveal } from "../shaders/loadingShader";
 import { pickByBreakpoint } from "../../helper/breakpoints";
 
-// TODO: add "mobileBig" / "mobileSmall" / "landscape_tablet" keys
-// here if the reveal should run at a different speed at those sizes.
+// Add a "landscape_tablet" key if the reveal should run at a different speed there.
 const DURATION_BY_BREAKPOINT = {
   desktop: 3600,
-  portrait_tablet: 3600,
 };
 
 export default function LoadingReveal({ onComplete }) {
