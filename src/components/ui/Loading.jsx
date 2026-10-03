@@ -313,7 +313,7 @@ export default function Loading({ onEnter }) {
           letter-spacing: 0.01em;
           cursor: pointer;
           outline: none;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+          transition: transform 0.3s ease, box-shadow 0.15s ease, background 0.2s ease;
         }
         .intro-btn:focus-visible { outline: 2px solid #ffedd5; outline-offset: 4px; }
         .intro-btn:disabled { cursor: default; opacity: 0.75; }
