@@ -264,6 +264,20 @@ export default function Loading({ onEnter }) {
                 .
               </p>
             </div>
+            <div className="intro-credits__row">
+              <span className="intro-credits__label">House icon</span>
+              <p>
+
+                <a
+                  href="https://www.flaticon.com/free-icons/house"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                   House icon created by Magnific
+                </a>
+                .
+              </p>
+            </div>
           </div>
         </div>
       )}
