@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { Volume2, VolumeX, X } from "lucide-react";
+import { Volume2, VolumeX, Play, X } from "lucide-react";
 
 // Intro screen. Runs the loading ring to 100%, then waits for the
 // visitor to choose "Enter with audio" / "Enter without audio" —
 // nothing proceeds (and the reveal never starts) until one is clicked.
-// onEnter(withAudio: boolean) is called exactly once.
+// onEnter(mode) is called exactly once, mode = "audio" | "silent" | "intro".
 export default function Loading({ onEnter }) {
   const [progress, setProgress] = useState(0);
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -40,10 +40,10 @@ export default function Loading({ onEnter }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [creditsOpen]);
 
-  const handleEnter = (withAudio) => {
+  const handleEnter = (mode) => {
     if (entering) return;
     setEntering(true);
-    onEnter?.(withAudio);
+    onEnter?.(mode);
   };
 
   // SVG circle math
@@ -169,11 +169,12 @@ export default function Loading({ onEnter }) {
             transition: "opacity 0.6s ease, transform 0.6s ease",
           }}
         >
+          <div className="flex flex-col items-stretch" style={{ gap: 20 }}>
           <div className="flex items-center" style={{ gap: 20 }}>
             <button
               type="button"
               className="intro-btn intro-btn--primary"
-              onClick={() => handleEnter(true)}
+              onClick={() => handleEnter("audio")}
               disabled={entering}
             >
               <Volume2 size={19} strokeWidth={2.2} />
@@ -182,11 +183,23 @@ export default function Loading({ onEnter }) {
             <button
               type="button"
               className="intro-btn intro-btn--ghost"
-              onClick={() => handleEnter(false)}
+              onClick={() => handleEnter("silent")}
               disabled={entering}
             >
               <VolumeX size={19} strokeWidth={2.2} />
               Enter without audio
+            </button>
+          </div>
+
+            {/* Guided camera tour of the room, with its own music */}
+            <button
+              type="button"
+              className="intro-btn intro-btn--tour"
+              onClick={() => handleEnter("intro")}
+              disabled={entering}
+            >
+              <Play size={17} strokeWidth={2.4} fill="currentColor" />
+              Show intro
             </button>
           </div>
 
@@ -241,10 +254,10 @@ export default function Loading({ onEnter }) {
             </div>
 
             <div className="intro-credits__row">
-              <span className="intro-credits__label">3D assets</span>
+              <span className="intro-credits__label">Intro Theme</span>
               <p>
-                Every 3D model and asset in this room was created by{" "}
-                <strong>Anuj Jadhav</strong> in Blender.
+                "Come and Get Your Love" by Redbone
+                As featured in Marvel Studios' Guardians of the Galaxy
               </p>
             </div>
 
@@ -260,20 +273,6 @@ export default function Loading({ onEnter }) {
                   rel="noopener noreferrer"
                 >
                   Official Stardew Valley Site
-                </a>
-                .
-              </p>
-            </div>
-            <div className="intro-credits__row">
-              <span className="intro-credits__label">House icon</span>
-              <p>
-
-                <a
-                  href="https://www.flaticon.com/free-icons/house"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                   House icon created by Magnific
                 </a>
                 .
               </p>
@@ -313,7 +312,7 @@ export default function Loading({ onEnter }) {
           letter-spacing: 0.01em;
           cursor: pointer;
           outline: none;
-          transition: transform 0.3s ease, box-shadow 0.15s ease, background 0.2s ease;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
         }
         .intro-btn:focus-visible { outline: 2px solid #ffedd5; outline-offset: 4px; }
         .intro-btn:disabled { cursor: default; opacity: 0.75; }
@@ -346,6 +345,23 @@ export default function Loading({ onEnter }) {
         .intro-btn--ghost:active:not(:disabled) {
           transform: translateY(4px);
           box-shadow: 0 1px 0 #a8431f, 0 4px 10px rgba(120, 45, 25, 0.2);
+        }
+
+        /* deep maroon key — same as the room's floor / the night sky */
+        .intro-btn--tour {
+          width: 100%;
+          background: #6e2f3b;
+          color: #fff1e6;
+          box-shadow: 0 5px 0 #43181f, 0 14px 24px rgba(60, 20, 20, 0.28);
+        }
+        .intro-btn--tour:hover:not(:disabled) {
+          background: #7b3745;
+          transform: translateY(-2px);
+          box-shadow: 0 7px 0 #43181f, 0 18px 28px rgba(60, 20, 20, 0.32);
+        }
+        .intro-btn--tour:active:not(:disabled) {
+          transform: translateY(4px);
+          box-shadow: 0 1px 0 #43181f, 0 4px 10px rgba(60, 20, 20, 0.28);
         }
 
         /* ── Credits link ── */

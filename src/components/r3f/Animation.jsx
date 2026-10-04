@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 
@@ -6,8 +6,13 @@ export default function Animation({
   loaded,
   onImacScreenAnimComplete,
   onTvScreenAnimComplete,
+  onAllComplete, // fires once the ENTIRE grow-in timeline has finished
 }) {
   const { scene } = useThree();
+
+  // Ref so a new callback identity never restarts the timeline below.
+  const allCompleteRef = useRef(onAllComplete);
+  allCompleteRef.current = onAllComplete;
 
   // Immediately hide all screens as soon as meshes are in the scene,
   // regardless of loaded state — so they never flash visible during background load
@@ -232,7 +237,9 @@ export default function Animation({
       const imacScreenMaterials = getScreenMaterials(a2_imac_screens);
       const tvScreenMaterials = getScreenMaterials(a2_tv_screens);
       const macScreenMaterials = getScreenMaterials(a2_mac_screens);
-      const master = gsap.timeline();
+      const master = gsap.timeline({
+        onComplete: () => allCompleteRef.current?.(),
+      });
 
       const rotatechairTop = (list) => {
         if (!list || list.length === 0) return null;

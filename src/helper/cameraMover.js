@@ -12,7 +12,10 @@ const CAMERA_BY_BREAKPOINT = {
     position: { x: 27.5, y: -21.4, z: 16.45 },
     target: { x: -5.6, y: -29.7, z: -6.8 },
   },
+
+
 };
+
 
 export const DEFAULT_CAMERA = {
   get position() {

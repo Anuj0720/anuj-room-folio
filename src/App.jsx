@@ -25,7 +25,9 @@ import { getCurrentBreakpoint, isSupportedScreen } from "./helper/breakpoints";
 import { ORBIT_LIMITS, ORBIT_UNLIMITED } from "./helper/orbitLimits";
 import UnsupportedScreen from "./components/ui/UnsupportedScreen";
 import { MusicToggler } from "./components/ui/MusicToggler";
-import { startBackgroundMusic, stopBackgroundMusic } from "./helper/audio";
+import { startBackgroundMusic, stopBackgroundMusic, beginIntroAudio, stopIntroAudio } from "./helper/audio";
+import { IntroTour } from "./components/r3f/IntroTour";
+import IntroOverlay from "./components/ui/IntroOverlay";
 import { loadRonaldoLiveStats } from "./helper/liveStats";
 import {
   IMAC_BACK_BUTTON,
@@ -185,6 +187,15 @@ function Portfolio() {
 
   const [selectedShowcaseId, setSelectedShowcaseId] = useState(null);
 
+  // "Show intro" tour: idle -> pending (waiting for the scene to finish
+  // its own animations) -> running (camera tour) -> done.
+  const [introMode, setIntroMode] = useState("idle");
+  const [introLabel, setIntroLabel] = useState("");
+  const introSkipRef = useRef(null);
+  const introStartedRef = useRef(false);
+  // true once the scene's entire grow-in animation timeline has ended
+  const [timelineDone, setTimelineDone] = useState(false);
+
   // Stop the background track if the portfolio unmounts (window
   // shrunk below the supported size).
   useEffect(() => () => stopBackgroundMusic(), []);
@@ -218,6 +229,47 @@ function Portfolio() {
     const id = setTimeout(() => markAnimReady(), 4000);
     return () => clearTimeout(id);
   }, [revealed, markAnimReady]);
+
+  // Start the camera tour only after the reveal AND the scene's ENTIRE
+  // animation timeline (every prop grown in, screens on) has finished.
+  // `animReady` is NOT used here — it also flips from a 4s fallback timer,
+  // which fires while the timeline is still running.
+  useEffect(() => {
+    if (introMode !== "pending" || introStartedRef.current) return;
+    if (!timelineDone) return;
+    introStartedRef.current = true;
+    const id = setTimeout(() => {
+      setShowBackButton(false);
+      setOrbitEnabled(false);
+      setIntroMode("running");
+    }, 250);
+    return () => clearTimeout(id);
+  }, [introMode, timelineDone]);
+
+  // Safety net: if the timeline never reports completion (e.g. a model
+  // without animated meshes), don't leave the visitor waiting forever.
+  useEffect(() => {
+    if (introMode !== "pending" || !revealed) return;
+    const id = setTimeout(() => setTimelineDone(true), 60000);
+    return () => clearTimeout(id);
+  }, [introMode, revealed]);
+
+  const handleIntroFinish = useCallback(() => {
+    setIntroMode("done");
+    setOrbitEnabled(true);
+    stopIntroAudio(); // fades out, never plays again; background takes over
+  }, []);
+
+  const handleIntroSkip = useCallback(() => {
+    if (introMode === "running") {
+      introSkipRef.current?.(); // camera glides home, then handleIntroFinish
+    } else {
+      introStartedRef.current = true; // cancel the pending tour
+      handleIntroFinish();
+    }
+  }, [introMode, handleIntroFinish]);
+
+  const introActive = introMode === "pending" || introMode === "running";
 
   const imacResetRef = useRef(null);
   const macResetRef = useRef(null);
@@ -322,8 +374,13 @@ function Portfolio() {
           "without" audio on the loading screen. */}
       {!loaded && (
         <Loading
-          onEnter={(withAudio) => {
-            startBackgroundMusic(withAudio);
+          onEnter={(mode) => {
+            if (mode === "intro") {
+              beginIntroAudio(); // intro.mp3 plays; background waits
+              setIntroMode("pending");
+            } else {
+              startBackgroundMusic(mode === "audio");
+            }
             setLoaded(true);
           }}
         />
@@ -343,12 +400,12 @@ function Portfolio() {
         <DayNightToggler
           isNight={isNight}
           onToggle={setIsNight}
-          drawerOpen={drawerOpen}
+          drawerOpen={drawerOpen || introActive}
           animReady={animReady}
         />
         <MusicToggler
           isNight={isNight}
-          drawerOpen={drawerOpen}
+          drawerOpen={drawerOpen || introActive}
           animReady={animReady}
         />
         {showBackButton && !drawerOpen && !selectedShowcaseId && (
@@ -366,6 +423,14 @@ function Portfolio() {
           onStop={handleStopDissolve}
           onBack={handleResetClick}
         />
+
+        {introActive && (
+          <IntroOverlay
+            label={introLabel}
+            canSkip={revealed}
+            onSkip={handleIntroSkip}
+          />
+        )}
 
         <Leva hidden  />
 
@@ -397,6 +462,7 @@ function Portfolio() {
                 onImacScreenAnimComplete={handleImacScreenAnimComplete}
                 onTvScreenAnimComplete={handleTvScreenAnimComplete}
                 onMacScreenAnimComplete={handleMacScreenAnimComplete}
+                onAllComplete={() => setTimelineDone(true)}
               />
 
               <Imac
@@ -444,6 +510,13 @@ function Portfolio() {
 
               <Showcase activeId={activeDissolveId} />
 
+              <IntroTour
+                active={introMode === "running"}
+                onStep={setIntroLabel}
+                onFinish={handleIntroFinish}
+                skipRef={introSkipRef}
+              />
+
               <ShowcaseHoverInteraction
                 onZoomStart={handleShowcaseZoomStart}
                 onTargetSelected={handleShowcaseTargetSelected}
@@ -455,7 +528,6 @@ function Portfolio() {
             <OrbitControls
               makeDefault
               enabled={orbitEnabled}
-              enablePan={false}
               // Limits only apply to the idle room view; close-up zoom
               // shots are outside them, so they're lifted while zoomed.
               {...(orbitEnabled ? ORBIT_LIMITS : ORBIT_UNLIMITED)}

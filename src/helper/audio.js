@@ -107,6 +107,7 @@ export function toggleBackgroundMusic() {
 export function stopBackgroundMusic() {
   started = false;
   musicOn = false;
+  if (intro && !introDone) endIntro(false);
   holds.clear();
   cancelFade();
   if (audio) {
@@ -139,6 +140,87 @@ export function registerExternalAudio(el) {
     (evt) => el.addEventListener(evt, sync),
   );
   sync();
+}
+
+// ── Intro music (public/music/intro.mp3) ─────────────────────────
+// Played ONCE, only when the visitor presses "Show intro" on the loading
+// screen. While it plays the background track is held back; when the
+// intro ends (or is skipped) it fades out, is thrown away, and can never
+// start again — then the background track takes over.
+
+const INTRO_SRC = "/music/intro.mp3";
+const INTRO_VOLUME = 0.6;
+const INTRO_FADE_MS = 900;
+
+let intro = null;
+let introDone = false; // true once it has played (or been stopped) — never replays
+let introFadeRaf = null;
+
+function fadeIntro(target, ms, onDone) {
+  if (!intro) return;
+  if (introFadeRaf !== null) cancelAnimationFrame(introFadeRaf);
+  const el = intro;
+  const from = el.volume;
+  const start = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - start) / ms);
+    el.volume = Math.max(0, Math.min(1, from + (target - from) * k));
+    if (k < 1) introFadeRaf = requestAnimationFrame(step);
+    else {
+      introFadeRaf = null;
+      onDone?.();
+    }
+  };
+  introFadeRaf = requestAnimationFrame(step);
+}
+
+function endIntro(fade = true) {
+  if (introDone) return;
+  introDone = true;
+
+  const el = intro;
+  const cleanup = () => {
+    if (el) {
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    }
+    if (intro === el) intro = null;
+    // Hand over to the background track (if the user has it on).
+    releaseBackgroundMusic("intro");
+  };
+
+  if (el && fade && !el.paused && !el.ended)
+    fadeIntro(0, INTRO_FADE_MS, cleanup);
+  else {
+    if (introFadeRaf !== null) cancelAnimationFrame(introFadeRaf);
+    introFadeRaf = null;
+    cleanup();
+  }
+}
+
+// "Show intro" button: music mode ON, background held back, intro plays.
+export function beginIntroAudio() {
+  if (introDone || intro) return;
+
+  holdBackgroundMusic("intro"); // before start so the bg track never blips
+  startBackgroundMusic(true);
+
+  if (typeof Audio === "undefined") return endIntro(false);
+  intro = new Audio(INTRO_SRC);
+  intro.loop = false;
+  intro.volume = 0;
+  intro.addEventListener("ended", () => endIntro(false));
+  intro.addEventListener("error", () => endIntro(false)); // missing file etc.
+  intro.play().then(
+    () => fadeIntro(INTRO_VOLUME, INTRO_FADE_MS),
+    () => endIntro(false),
+  );
+}
+
+// Call when the camera tour ends or is skipped.
+export function stopIntroAudio() {
+  endIntro(true);
 }
 
 // ── React hook ───────────────────────────────────────────────────

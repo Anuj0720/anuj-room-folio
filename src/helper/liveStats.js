@@ -1,3 +1,18 @@
+// Live stats for players flagged with `liveSource: "ronaldo"` in data.js
+// (currently ONLY Cristiano Ronaldo — everyone else stays static).
+//
+// Source : English Wikipedia's public MediaWiki API (no key, CORS-enabled).
+//          We read the intro text of two articles and pull the career
+//          figures the editors keep up to date:
+//            goals, appearances, trophies, Ballon d'Or count.
+// Not live: assists (the intro text has no career-assist total), so that
+//          one keeps the static value from data.js.
+// Age    : always computed from the date of birth (see getAge below).
+//
+// Safety : every field is range-checked; anything missing / unparsable /
+//          offline falls back to the cached value, then to data.js. The
+//          site never breaks and never shows a blank number.
+
 import { useSyncExternalStore } from "react";
 
 const WIKI_API = "https://en.wikipedia.org/w/api.php";
@@ -17,16 +32,8 @@ const LIMITS = {
 };
 
 const WORD_NUMBERS = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
+  one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
 };
 
 // ── Parsing ──────────────────────────────────────────────────────
@@ -75,9 +82,7 @@ export function parseRonaldoStats(text) {
   if (trophies) out.trophies = trophies;
 
   // "five Ballon d'Or" / "5 Ballon d'Or"
-  const ballon = text.match(
-    /\b(one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})\s+(?:FIFA\s+)?Ballon d['’]Or/i,
-  );
+  const ballon = text.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})\s+(?:FIFA\s+)?Ballon d['’]Or/i);
   if (ballon) {
     const n = WORD_NUMBERS[ballon[1].toLowerCase()] ?? parseInt(ballon[1], 10);
     if (n >= LIMITS.ballonDor[0] && n <= LIMITS.ballonDor[1]) out.ballonDor = n;
@@ -104,12 +109,9 @@ async function fetchFromWikipedia() {
   if (!res.ok) throw new Error(`Wikipedia API ${res.status}`);
   const json = await res.json();
 
-  const text = (json?.query?.pages ?? [])
-    .map((p) => p.extract || "")
-    .join("\n");
+  const text = (json?.query?.pages ?? []).map((p) => p.extract || "").join("\n");
   const stats = parseRonaldoStats(text);
-  if (!Object.keys(stats).length)
-    throw new Error("No stats found in article text");
+  if (!Object.keys(stats).length) throw new Error("No stats found in article text");
   return stats;
 }
 
@@ -119,18 +121,14 @@ function readCache() {
   try {
     const raw = JSON.parse(localStorage.getItem(CACHE_KEY));
     if (raw?.stats && raw?.fetchedAt) return raw;
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
   return null;
 }
 
 function writeCache(stats, fetchedAt) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ stats, fetchedAt }));
-  } catch {
-    /* ignore (private mode, quota…) */
-  }
+  } catch { /* ignore (private mode, quota…) */ }
 }
 
 // ── Tiny store so React components can subscribe ────────────────
@@ -150,14 +148,9 @@ export function loadRonaldoLiveStats() {
 
   const cached = readCache();
   if (cached && state.status === "idle") {
-    setState({
-      status: "live",
-      stats: cached.stats,
-      updatedAt: cached.fetchedAt,
-    });
+    setState({ status: "live", stats: cached.stats, updatedAt: cached.fetchedAt });
   }
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS)
-    return Promise.resolve();
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return Promise.resolve();
   if (inflight) return inflight;
 
   if (state.status === "idle") setState({ status: "loading" });

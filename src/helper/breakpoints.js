@@ -5,6 +5,9 @@ const BREAKPOINT_MAX_WIDTH = {
   desktop: Infinity,
 };
 
+// Smallest window width (px) at which the portfolio is shown.
+// Everything at or below 768px (portrait tablets / phones) gets the
+// "only designed for desktop and tablet" screen instead.
 export const MIN_SUPPORTED_WIDTH = 769;
 
 export function isSupportedScreen() {
