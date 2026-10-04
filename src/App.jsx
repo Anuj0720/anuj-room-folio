@@ -25,6 +25,8 @@ import { getCurrentBreakpoint, isSupportedScreen } from "./helper/breakpoints";
 import { ORBIT_LIMITS, ORBIT_UNLIMITED } from "./helper/orbitLimits";
 import UnsupportedScreen from "./components/ui/UnsupportedScreen";
 import { MusicToggler } from "./components/ui/MusicToggler";
+import { InkToggler } from "./components/ui/InkToggler";
+import { InkEffect } from "./components/r3f/InkEffect";
 import { startBackgroundMusic, stopBackgroundMusic, beginIntroAudio, stopIntroAudio } from "./helper/audio";
 import { IntroTour } from "./components/r3f/IntroTour";
 import IntroOverlay from "./components/ui/IntroOverlay";
@@ -192,6 +194,8 @@ function Portfolio() {
   const [introMode, setIntroMode] = useState("idle");
   const [introLabel, setIntroLabel] = useState("");
   const introSkipRef = useRef(null);
+  // 3D <-> hand-inked sketch view
+  const [inkMode, setInkMode] = useState(false);
   const introStartedRef = useRef(false);
   // true once the scene's entire grow-in animation timeline has ended
   const [timelineDone, setTimelineDone] = useState(false);
@@ -408,6 +412,13 @@ function Portfolio() {
           drawerOpen={drawerOpen || introActive}
           animReady={animReady}
         />
+        <InkToggler
+          on={inkMode}
+          onToggle={() => setInkMode((v) => !v)}
+          isNight={isNight}
+          drawerOpen={drawerOpen || introActive}
+          animReady={animReady}
+        />
         {showBackButton && !drawerOpen && !selectedShowcaseId && (
           <BackButton
             onClick={handleResetClick}
@@ -535,6 +546,9 @@ function Portfolio() {
             />
 
             <CameraController isZoomed={!orbitEnabled} />
+
+            {/* Hand-inked sketch look; plain render when switched off */}
+            <InkEffect enabled={inkMode} />
           </Suspense>
         </Canvas>
 

@@ -1,3 +1,21 @@
+// Background-music manager (single shared <audio> element).
+//
+// Rules it enforces:
+//  * Nothing plays until startBackgroundMusic() is called from the intro
+//    screen's "Enter" buttons (that click is also the user gesture the
+//    browser needs to allow audio).
+//  * "Enter without audio" starts the scene with the music OFF; the
+//    music button in the scene can turn it on later.
+//  * Any registered "external" media element (the TV / Mac / Hologram
+//    videos) that is actually audible (playing AND unmuted) pauses the
+//    background track. When it goes silent again (muted, paused, or the
+//    camera leaves the object) the background track fades back in —
+//    but only if the user hasn't muted it themselves.
+//  * Objects that embed their own sound we can't observe (the iMac's
+//    iframe) use holdBackgroundMusic(id) / releaseBackgroundMusic(id) to
+//    keep the track paused for as long as the camera is on them.
+//  * The track also pauses while the browser tab is hidden.
+
 import { useSyncExternalStore } from "react";
 
 const MUSIC_SRC = "/music/background.mp3";
@@ -190,8 +208,7 @@ function endIntro(fade = true) {
     releaseBackgroundMusic("intro");
   };
 
-  if (el && fade && !el.paused && !el.ended)
-    fadeIntro(0, INTRO_FADE_MS, cleanup);
+  if (el && fade && !el.paused && !el.ended) fadeIntro(0, INTRO_FADE_MS, cleanup);
   else {
     if (introFadeRaf !== null) cancelAnimationFrame(introFadeRaf);
     introFadeRaf = null;
@@ -231,9 +248,5 @@ function subscribe(listener) {
 
 // true = the user has the music switched on
 export function useMusicOn() {
-  return useSyncExternalStore(
-    subscribe,
-    () => musicOn,
-    () => false,
-  );
+  return useSyncExternalStore(subscribe, () => musicOn, () => false);
 }

@@ -1,3 +1,9 @@
+// Showcase mesh + camera + per-target UI configuration.
+//
+// Each target's config is one object keyed by breakpoint name (see
+// helper/breakpoints.js). Only desktop / landscape_tablet exist; a
+// missing landscape_tablet key falls back to desktop.
+
 import { pickByBreakpoint } from "../../helper/breakpoints";
 
 function responsiveTarget(byBreakpoint) {

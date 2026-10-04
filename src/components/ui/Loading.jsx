@@ -254,10 +254,10 @@ export default function Loading({ onEnter }) {
             </div>
 
             <div className="intro-credits__row">
-              <span className="intro-credits__label">Intro Theme</span>
+              <span className="intro-credits__label">3D assets</span>
               <p>
-                "Come and Get Your Love" by Redbone
-                As featured in Marvel Studios' Guardians of the Galaxy
+                Every 3D model and asset in this room was created by{" "}
+                <strong>Anuj Jadhav</strong> in Blender.
               </p>
             </div>
 

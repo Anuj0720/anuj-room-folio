@@ -1,3 +1,15 @@
+// OrbitControls limits for the idle (un-zoomed) room view.
+// All angles are in DEGREES here and converted to radians below.
+//
+// Reference values of the default cameras (for tuning):
+//   desktop          -> distance ≈ 38.7, polar ≈ 75.8°, azimuth ≈ 60.9°
+//   landscape_tablet -> distance ≈ 41.3, polar ≈ 78.4°, azimuth ≈ 54.9°
+// Keep the defaults INSIDE these ranges, otherwise the camera gets
+// clamped (and visibly jumps) the moment controls are re-enabled.
+//
+// Polar angle   : 0° = straight above the target, 90° = level with it.
+// Azimuth angle : 0° = camera on the +Z axis, 90° = camera on the +X axis.
+
 const deg = (d) => (d * Math.PI) / 180;
 
 export const ORBIT_LIMITS = {

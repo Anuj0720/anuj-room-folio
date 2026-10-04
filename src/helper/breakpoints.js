@@ -1,3 +1,13 @@
+// Breakpoint system — this portfolio only supports TWO layouts:
+//   landscape_tablet : 769px – 1100px wide
+//   desktop          : 1101px and up
+//
+// Anything narrower than landscape_tablet (phones, portrait tablets)
+// is NOT supported: App.jsx shows a "desktop & tablet only" message
+// instead of the portfolio (see isSupportedScreen below).
+//
+// Ordered smallest -> largest. The last entry should stay Infinity so
+// there's always a match.
 export const BREAKPOINT_ORDER = ["landscape_tablet", "desktop"];
 
 const BREAKPOINT_MAX_WIDTH = {

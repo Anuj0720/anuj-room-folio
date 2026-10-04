@@ -16,7 +16,11 @@ const CAMERA_BY_BREAKPOINT = {
 
 };
 
-
+// A getter-based object, not a plain one — every read of .position or
+// .target picks the right value for the CURRENT breakpoint at the
+// time it's accessed. Every existing call site that does
+// `DEFAULT_CAMERA.position` / `DEFAULT_CAMERA.target` keeps working
+// completely unchanged.
 export const DEFAULT_CAMERA = {
   get position() {
     return pickByBreakpoint(CAMERA_BY_BREAKPOINT).position;

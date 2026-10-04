@@ -23,6 +23,7 @@ An interactive 3D portfolio built as a cozy room you can explore in the browser.
 
 - **3D room scene** – a fully explorable room with interactive objects (iMac, Mac, TV, poster, hologram).
 - **Day / Night switching** – swaps between two Blender-baked texture sets for completely different lighting moods.
+- **Room / Sketch switching** – temporarily converts supported scene materials to three-band `MeshToonMaterial`, with paper grain and inked outlines, then restores the original materials when switched off.
 - **Spiral shader transition** – a custom full-screen spiral reveals the scene once loading is complete.
 - **Dissolve / reveal animations** – objects appear using a custom `DissolveMaterial` built on top of `three-custom-shader-material`.
 - **Custom loading screen** – tied to real asset progress and a minimum load timer, so the transition only fires when both are ready.
